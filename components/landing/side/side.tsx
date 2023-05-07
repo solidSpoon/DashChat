@@ -1,29 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import {useState} from 'react';
 
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import {useRouter, useParams} from 'next/navigation';
 
-import { useTranslations } from 'next-intl';
+import {useTranslations} from 'next-intl';
 
-import { signOut } from 'next-auth/react';
+import {signOut} from 'next-auth/react';
 
-import { User } from '@prisma/client';
+import {User} from '@prisma/client';
 
 import store from '@/hooks/store';
-import { useAtom } from 'jotai';
+import {useAtom} from 'jotai';
 
-import { useTheme } from 'next-themes';
+import {useTheme} from 'next-themes';
 
-import { GrGithub } from 'react-icons/gr';
-import { RxAvatar } from 'react-icons/rx';
-import { IoLanguage } from 'react-icons/io5';
-import { HiChatBubbleLeft } from 'react-icons/hi2';
-import { FiMoreHorizontal } from 'react-icons/fi';
-import { TbContrast, TbMoonFilled, TbSunFilled } from 'react-icons/tb';
+import {GrGithub} from 'react-icons/gr';
+import {RxAvatar} from 'react-icons/rx';
+import {IoLanguage} from 'react-icons/io5';
+import {HiChatBubbleLeft} from 'react-icons/hi2';
+import {FiMoreHorizontal} from 'react-icons/fi';
+import {TbContrast, TbMoonFilled, TbSunFilled} from 'react-icons/tb';
 
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import {Avatar, AvatarImage} from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -38,13 +38,13 @@ import {
     DropdownMenuRadioGroup,
 } from '@/components/ui/dropdown-menu';
 
-import { siteConfig, sidebarMoreMenu } from '@/config/site.config';
+import {siteConfig, sidebarMoreMenu} from '@/config/site.config';
 
 import SideHistory from '@/components/landing/side/side-history';
 import SideAppSettings from '@/components/landing/side/side-app-settings';
 import SideUserSettings from '@/components/landing/side/side-user-settings';
 
-const LandingSide = ({ className, user }: { className?: string; user: User | null }) => {
+const LandingSide = ({className, user}: { className?: string; user: User | null }) => {
     const router = useRouter();
 
     const params = useParams();
@@ -53,7 +53,7 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
 
     const [language, setLanguage] = useState(i18Language);
 
-    const { theme, setTheme } = useTheme();
+    const {theme, setTheme} = useTheme();
 
     const t = useTranslations('landing.side');
 
@@ -62,7 +62,8 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
     if (isHiddenSide) return null;
 
     return (
-        <aside className={'bottom-1 left-0 top-1 z-10 h-full flex-col justify-between rounded-lg backdrop-blur md:fixed md:w-80 ' + className}>
+        <aside
+            className={'bottom-1 left-0 top-1 z-10 h-full flex-col justify-between rounded-lg backdrop-blur md:fixed md:w-80 ' + className}>
             <div className='space-y-2 p-1'>
                 <div className='flex items-center justify-between border-b px-1'>
                     <div className='p-1'>
@@ -73,20 +74,22 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
                 <div className='flex items-center justify-center'>
                     <button
                         className='inline-flex items-center space-x-1 rounded p-1 px-2 text-sm font-medium transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                        onClick={() => (location.href = '')}
+                        onClick={() => (location.href = '/mode/chat')}
                     >
-                        <HiChatBubbleLeft />
+                        <HiChatBubbleLeft/>
                         <span>{t('New Conversation')}</span>
                     </button>
                 </div>
-                <SideHistory />
+                <SideHistory/>
             </div>
             <div className='p-1'>
                 {user && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className='m-1 flex flex-grow flex-row items-center justify-start space-x-2 rounded-lg bg-white/90 py-1 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327]'>
-                                <Avatar className='inline-flex items-center justify-center'>{user?.image ? <AvatarImage src={user.image} /> : <RxAvatar className='text-2xl' />}</Avatar>
+                            <div
+                                className='m-1 flex flex-grow flex-row items-center justify-start space-x-2 rounded-lg bg-white/90 py-1 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327]'>
+                                <Avatar className='inline-flex items-center justify-center'>{user?.image ?
+                                    <AvatarImage src={user.image}/> : <RxAvatar className='text-2xl'/>}</Avatar>
                                 <p>{user.name}</p>
                             </div>
                         </DropdownMenuTrigger>
@@ -95,10 +98,10 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
                                 <p className='font-medium'>{user?.name}</p>
                                 <p className='text-xs text-slate-700'>{user?.email}</p>
                             </div>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator/>
                             <DropdownMenuItem onClick={() => router.push('/profile/info')}>Profile</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push('/profile/team')}>Team</DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator/>
                             <DropdownMenuItem
                                 onClick={() =>
                                     signOut({
@@ -113,8 +116,8 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
                 )}
                 <div className='flex flex-row items-center justify-between p-3'>
                     <div className='flex space-x-3'>
-                        <SideAppSettings user={user} />
-                        {!user && <SideUserSettings />}
+                        <SideAppSettings user={user}/>
+                        {!user && <SideUserSettings/>}
                     </div>
                     <div className='flex'>
                         <DropdownMenu>
@@ -123,38 +126,41 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
                                     className='inline-flex items-center space-x-1 rounded p-1 px-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
                                     aria-label='More Config'
                                 >
-                                    <FiMoreHorizontal />
+                                    <FiMoreHorizontal/>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className='transition duration-200 ease-in-out' side='top'>
                                 {sidebarMoreMenu.map((item, index) => {
                                     return (
                                         <DropdownMenuItem key={index}>
-                                            <Link href={item.url} className='flex w-full items-center space-x-2' target='_blank'>
-                                                <item.icon className='block' />
+                                            <Link href={item.url} className='flex w-full items-center space-x-2'
+                                                  target='_blank'>
+                                                <item.icon className='block'/>
                                                 <span>{item.title}</span>
                                             </Link>
                                         </DropdownMenuItem>
                                     );
                                 })}
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator/>
                                 <DropdownMenuItem>
-                                    <Link href='https://github.com/okisdev/ChatChat' className='flex w-full items-center space-x-2' target='_blank'>
-                                        <GrGithub className='block' />
+                                    <Link href='https://github.com/okisdev/ChatChat'
+                                          className='flex w-full items-center space-x-2' target='_blank'>
+                                        <GrGithub className='block'/>
                                         <span>Project GitHub</span>
                                     </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator/>
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger className='cursor-pointer space-x-1'>
-                                        <TbContrast />
+                                        <TbContrast/>
                                         <span>Theme</span>
                                     </DropdownMenuSubTrigger>
                                     <DropdownMenuPortal>
                                         <DropdownMenuSubContent>
                                             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                                                 {themeList.map((theme, index) => (
-                                                    <DropdownMenuRadioItem key={index} value={theme.value} className='cursor-pointer space-x-1'>
+                                                    <DropdownMenuRadioItem key={index} value={theme.value}
+                                                                           className='cursor-pointer space-x-1'>
                                                         {theme.icon}
                                                         <span>{theme.name}</span>
                                                     </DropdownMenuRadioItem>
@@ -163,17 +169,19 @@ const LandingSide = ({ className, user }: { className?: string; user: User | nul
                                         </DropdownMenuSubContent>
                                     </DropdownMenuPortal>
                                 </DropdownMenuSub>
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator/>
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger className='cursor-pointer space-x-1'>
-                                        <IoLanguage />
+                                        <IoLanguage/>
                                         <span>Language</span>
                                     </DropdownMenuSubTrigger>
                                     <DropdownMenuPortal>
                                         <DropdownMenuSubContent>
                                             <DropdownMenuRadioGroup value={language} onValueChange={setLanguage}>
                                                 {languageList.map((language, index) => (
-                                                    <DropdownMenuRadioItem key={index} value={language.value} className='cursor-pointer space-x-1' onClick={() => router.push(language.value)}>
+                                                    <DropdownMenuRadioItem key={index} value={language.value}
+                                                                           className='cursor-pointer space-x-1'
+                                                                           onClick={() => router.push(language.value)}>
                                                         <span>{language.name}</span>
                                                     </DropdownMenuRadioItem>
                                                 ))}
@@ -196,17 +204,17 @@ const themeList = [
     {
         name: 'Light',
         value: 'light',
-        icon: <TbSunFilled />,
+        icon: <TbSunFilled/>,
     },
     {
         name: 'Dark',
         value: 'dark',
-        icon: <TbMoonFilled />,
+        icon: <TbMoonFilled/>,
     },
     {
         name: 'System',
         value: 'system',
-        icon: <TbContrast />,
+        icon: <TbContrast/>,
     },
 ];
 

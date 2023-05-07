@@ -63,9 +63,6 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
 
     const t = useTranslations('landing.chat');
 
-    const isHiddenSide = useAtom(store.isHiddenSideAtom)[0];
-
-    if (isHiddenSide) return null;
     return (
         <aside className={'flex-none h-full flex-col gap-2 flex shadow rounded-lg bg-white/90 md:p-3 '}>
                 <div className='flex items-start justify-between border-b'>
