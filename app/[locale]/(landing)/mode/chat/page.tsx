@@ -10,7 +10,7 @@ export default function ChatModePage() {
     const isHiddenSide = useAtomValue(store.isHiddenSideAtom);
 
     return (
-        <div className={`h-screen ${!isHiddenSide && 'md:ml-80'}`}>
+        <div className={`h-screen flex p-2 flex-col gap-4 ${!isHiddenSide && 'md:ml-80'}`}>
             <LandingHeader />
             <ChatMain />
         </div>
