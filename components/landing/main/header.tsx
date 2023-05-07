@@ -31,7 +31,7 @@ const LandingHeader = () => {
     const currentMode = ModeList.find((mode) => mode.link === pathname) || ModeList.find((mode) => mode.value === 'chat');
 
     return (
-        <div className='flex flex-grow flex-col rounded-lg  bg-white/90 px-4 py-2 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327] md:p-3'>
+        <div className='flex flex-col rounded-lg  bg-white/90 px-4 py-2 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327] md:p-3'>
             <div className='flex items-center justify-between'>
                 <div>
                     <div className='hidden md:block'>
