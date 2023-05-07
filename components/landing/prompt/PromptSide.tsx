@@ -44,6 +44,7 @@ import SideHistory from '@/components/landing/side/side-history';
 import SideAppSettings from '@/components/landing/side/side-app-settings';
 import SideUserSettings from '@/components/landing/side/side-user-settings';
 import {BsReverseLayoutSidebarReverse} from "react-icons/all";
+import PromptItems from "@/components/landing/prompt/PromptItems";
 
 interface PromptSideProps {
     isShowPromptSide: boolean;
@@ -88,7 +89,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
                         <span>{t('New Prompt')}</span>
                     </button>
                 </div>
-                <SideHistory/>
+                <PromptItems/>
         </aside>
     );
 };
