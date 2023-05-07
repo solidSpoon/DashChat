@@ -68,7 +68,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
                 <div className='flex items-start justify-between border-b'>
                     <div className='p-1 flex-1'>
                         <p className='from-green-400 to-blue-500 bg-gradient-to-r bg-clip-text text-lg font-semibold leading-none text-transparent md:text-xl'>Prompts</p>
-                        <p className='text-xs font-medium'>{t(siteConfig.description)}</p>
+                        <p className='text-xs font-medium'>{t("Prompt Side Description")}</p>
                     </div>
                     {isShowPromptSide &&
                         <button
