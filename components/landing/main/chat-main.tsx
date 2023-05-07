@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import {useEffect, useState, useRef} from 'react';
 
-import { useSearchParams } from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
 
-import { useTranslations } from 'next-intl';
+import {useTranslations} from 'next-intl';
 
-import { toast } from 'react-hot-toast';
+import {toast} from 'react-hot-toast';
 
 import store from '@/hooks/store';
-import { useAtom, useAtomValue } from 'jotai';
+import {useAtom, useAtomValue} from 'jotai';
 
-import { setLocalStorage } from '@/hooks/setLocalStorage';
+import {setLocalStorage} from '@/hooks/setLocalStorage';
 
 import ContentHead from '@/components/landing/main/chat-head';
 import InputArea from '@/components/landing/main/input-area';
@@ -21,16 +21,23 @@ import ModeSettings from '@/components/landing/main/main-settings';
 
 import generateHash from '@/utils/app/generateHash';
 
-import { getSearchFromGoogleProgrammableSearchEngine } from '@/utils/plugins/search';
-import { fetchContent } from '@/utils/plugins/fetch_content';
+import {getSearchFromGoogleProgrammableSearchEngine} from '@/utils/plugins/search';
+import {fetchContent} from '@/utils/plugins/fetch_content';
 
-import { User } from '@prisma/client';
+import {User} from '@prisma/client';
+import {FiLayout} from "react-icons/fi";
+import {BsReverseLayoutSidebarReverse, TbLayoutSidebarRight, TbLayoutSidebarRightExpand} from "react-icons/all";
 
 interface UserSettingsProps {
     user: User;
 }
 
-const ChatMain = () => {
+interface ChatMainProps {
+    isShowPromptSide: boolean;
+    changeShowPromptSide: () => void;
+}
+
+const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     const searchParams = useSearchParams();
 
     const share = searchParams?.get('share');
@@ -138,9 +145,12 @@ const ChatMain = () => {
         if (!isNoContextConversation) {
             isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
                 ? setConversations((prev) => [...prev, message])
-                : setConversations((prev) => [{ role: 'system', content: systemPromptContent }, ...prev, message]);
+                : setConversations((prev) => [{role: 'system', content: systemPromptContent}, ...prev, message]);
         } else {
-            isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? setConversations([message]) : setConversations([{ role: 'system', content: systemPromptContent }, message]);
+            isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? setConversations([message]) : setConversations([{
+                role: 'system',
+                content: systemPromptContent
+            }, message]);
         }
 
         let configPayload;
@@ -227,20 +237,29 @@ const ChatMain = () => {
         if (plugin && enablePlugin && pluginResponse && pluginPrompt) {
             if (!isNoContextConversation) {
                 isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                    ? (messagesPayload = [...conversations, { role: 'system', content: pluginPrompt }, message])
-                    : (messagesPayload = [{ role: 'system', content: systemPromptContent }, ...conversations, { role: 'system', content: pluginPrompt }, message]);
+                    ? (messagesPayload = [...conversations, {role: 'system', content: pluginPrompt}, message])
+                    : (messagesPayload = [{
+                        role: 'system',
+                        content: systemPromptContent
+                    }, ...conversations, {role: 'system', content: pluginPrompt}, message]);
             } else {
                 isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                    ? (messagesPayload = [{ role: 'system', content: pluginPrompt }, message])
-                    : (messagesPayload = [{ role: 'system', content: systemPromptContent }, { role: 'system', content: pluginPrompt }, message]);
+                    ? (messagesPayload = [{role: 'system', content: pluginPrompt}, message])
+                    : (messagesPayload = [{role: 'system', content: systemPromptContent}, {
+                        role: 'system',
+                        content: pluginPrompt
+                    }, message]);
             }
         } else {
             if (!isNoContextConversation) {
                 isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
                     ? (messagesPayload = [...conversations, message])
-                    : (messagesPayload = [{ role: 'system', content: systemPromptContent }, ...conversations, message]);
+                    : (messagesPayload = [{role: 'system', content: systemPromptContent}, ...conversations, message]);
             } else {
-                isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? (messagesPayload = [message]) : (messagesPayload = [{ role: 'system', content: systemPromptContent }, message]);
+                isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? (messagesPayload = [message]) : (messagesPayload = [{
+                    role: 'system',
+                    content: systemPromptContent
+                }, message]);
             }
         }
 
@@ -279,7 +298,7 @@ const ChatMain = () => {
         }
 
         setSystemResponse('');
-        setConversations((prev) => [...prev, { role: 'assistant', content: '' }]);
+        setConversations((prev) => [...prev, {role: 'assistant', content: ''}]);
 
         const reader = data.getReader();
         const decoder = new TextDecoder();
@@ -293,7 +312,7 @@ const ChatMain = () => {
                 break;
             }
 
-            const { value, done: readerDone } = await reader.read();
+            const {value, done: readerDone} = await reader.read();
             done = readerDone;
             const chunkValue = decoder.decode(value);
 
@@ -314,7 +333,10 @@ const ChatMain = () => {
         if (!isNoContextConversation) {
             if (chatTitle == 'Chat') {
                 let currentChatTitle = '';
-                const chatTitlePayload: AppMessageProps[] = [{ role: 'system', content: `Please suggest a title for "${message.content}".` }];
+                const chatTitlePayload: AppMessageProps[] = [{
+                    role: 'system',
+                    content: `Please suggest a title for "${message.content}".`
+                }];
 
                 const response = await fetch('/api/messages', {
                     method: 'POST',
@@ -347,7 +369,7 @@ const ChatMain = () => {
                 let done = false;
 
                 while (!done) {
-                    const { value, done: readerDone } = await reader.read();
+                    const {value, done: readerDone} = await reader.read();
                     done = readerDone;
                     const chunkValue = decoder.decode(value);
 
@@ -420,10 +442,28 @@ const ChatMain = () => {
         }
     };
 
+    const handleTogglePromptSide = () => {
+        changeShowPromptSide();
+    }
+
     return (
-        <main className=' flex h-full flex-grow flex-col rounded-lg bg-white/90 px-4 py-2 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327] md:p-3'>
+        <main
+            className=' flex h-full flex-grow flex-col rounded-lg bg-white/90 px-4 py-2 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327] md:p-3'>
             <div className='flex h-full w-full flex-col justify-between space-y-3'>
-                {conversations.length > 0 && <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse} waitingSystemResponse={waitingSystemResponse} conversations={conversations} />}
+                {/*上对齐*/}
+                <div className="flex justify-end items-start">
+                    {conversations.length > 0 &&
+                        <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
+                                     waitingSystemResponse={waitingSystemResponse} conversations={conversations}/>}
+                    {!isShowPromptSide &&
+                        <button
+                            className='inline-flex items-center space-x-1 rounded p-1 px-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                            onClick={handleTogglePromptSide}
+                            aria-label='Nav'
+                        >
+                            <TbLayoutSidebarRightExpand className="w-5 h-5"/>
+                        </button>}
+                </div>
                 <div className='mx-auto h-[calc(100%-200px)] w-full overflow-auto md:w-8/12'>
                     {conversations.length > 0 ? (
                         <MainContent
@@ -450,7 +490,8 @@ const ChatMain = () => {
                             isSystemPromptEmpty={isSystemPromptEmpty}
                         />
                     ) : (
-                        <ModeSettings systemPromptContent={systemPromptContent} setSystemPromptContent={setSystemPromptContent} />
+                        <ModeSettings systemPromptContent={systemPromptContent}
+                                      setSystemPromptContent={setSystemPromptContent}/>
                     )}
                 </div>
                 <div>

@@ -21,6 +21,9 @@
       "Light": "亮色模式",
       "Use Cloud Settings": "使用云端设置"
     },
+    "chat": {
+      "New Prompt": "新建提示"
+    },
     "main": {
       "Edit": "编辑",
       "Copy": "复制",

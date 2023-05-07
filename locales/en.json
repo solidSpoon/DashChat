@@ -21,6 +21,9 @@
       "Light": "Light",
       "Use Cloud Settings": "Use Cloud Settings"
     },
+    "chat": {
+      "New Prompt": "New Prompt"
+    },
     "main": {
       "Edit": "Edit",
       "Copy": "Copy",

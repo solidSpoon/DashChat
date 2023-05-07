@@ -5,6 +5,7 @@ import { atomWithStorage } from 'jotai/utils';
 
 // Layout
 const isHiddenSideAtom = atom(false);
+const isHiddenPromptSideAtom = atom(false);
 
 // ------------------ Conversation Config ------------------
 
@@ -96,4 +97,5 @@ export default {
     huggingFaceConfigAtom,
     cohereConfigAtom,
     claudeConfigAtom,
+    isShowPromptSideAtom: isHiddenPromptSideAtom,
 };
