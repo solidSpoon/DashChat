@@ -27,6 +27,7 @@ import {fetchContent} from '@/utils/plugins/fetch_content';
 import {User} from '@prisma/client';
 import {FiLayout} from "react-icons/fi";
 import {BsReverseLayoutSidebarReverse, TbLayoutSidebarRight, TbLayoutSidebarRightExpand} from "react-icons/all";
+import ChatNote from "@/components/landing/main/chat-note";
 
 interface UserSettingsProps {
     user: User;
@@ -87,6 +88,8 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
 
     // User Settings
     const [userSettings, setUserSettings] = useState<UserSettingsProps | null>(null);
+
+    const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
 
     // Plugins
 
@@ -448,13 +451,9 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
 
     return (
         <main
-            className=' flex h-full flex-grow flex-col rounded-lg bg-white/90 px-4 py-2 shadow backdrop-blur transition-transform duration-500 dark:bg-[#202327] md:p-3'>
-            <div className='flex h-full w-full flex-col justify-between space-y-3'>
-                {/*上对齐*/}
-                <div className="flex justify-end items-start">
-                    {conversations.length > 0 &&
-                        <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
-                                     waitingSystemResponse={waitingSystemResponse} conversations={conversations}/>}
+            className="flex flex-row-reverse gap-2 rounded-lg bg-white/90 dark:bg-[#202327] shadow backdrop-blur md:p-3">
+            {!isShowPromptCard &&
+                <div className="w-[350px] flex-none h-full flex flex-col items-end">
                     {!isShowPromptSide &&
                         <button
                             className='inline-flex items-center space-x-1 rounded p-1 px-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
@@ -463,48 +462,59 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                         >
                             <TbLayoutSidebarRightExpand className="w-5 h-5"/>
                         </button>}
+                    <div className="w-full h-full bg-amber-200">
+                        <ChatNote/>
+                    </div>
                 </div>
-                <div className='mx-auto h-[calc(100%-200px)] w-full overflow-auto md:w-8/12'>
-                    {conversations.length > 0 ? (
-                        <MainContent
-                            systemResponse={systemResponse}
-                            waitingSystemResponse={waitingSystemResponse}
+            }
+            <div
+                className=' flex h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
+                <div className='flex h-full w-full flex-col justify-between items-end space-y-3'>
+                        {conversations.length > 0 &&
+                            <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
+                                         waitingSystemResponse={waitingSystemResponse} conversations={conversations}/>}
+                    <div className='mx-auto h-[calc(100%-200px)] w-full overflow-auto md:w-8/12'>
+                        {conversations.length > 0 ? (
+                            <MainContent
+                                systemResponse={systemResponse}
+                                waitingSystemResponse={waitingSystemResponse}
+                                conversations={conversations}
+                                reGenerate={(index: number) => (isSystemPromptEmpty ? handleMessageSend(conversations[index - 1], index, null) : handleMessageSend(conversations[index], index + 1, null))}
+                                onEdit={(index: number) => {
+                                    const promptIndex = isSystemPromptEmpty ? index : index + 1;
+
+                                    const newContent = prompt('Edit message:', conversations[promptIndex].content);
+
+                                    if (newContent !== null) {
+                                        const newMessage: AppMessageProps = {
+                                            role: 'user',
+                                            content: newContent,
+                                        };
+
+                                        setConversations(conversations.slice(0, promptIndex));
+
+                                        handleMessageSend(newMessage);
+                                    }
+                                }}
+                                isSystemPromptEmpty={isSystemPromptEmpty}
+                            />
+                        ) : (
+                            <ModeSettings systemPromptContent={systemPromptContent}
+                                          setSystemPromptContent={setSystemPromptContent}/>
+                        )}
+                    </div>
+                    <div className="w-full">
+                        <InputArea
                             conversations={conversations}
-                            reGenerate={(index: number) => (isSystemPromptEmpty ? handleMessageSend(conversations[index - 1], index, null) : handleMessageSend(conversations[index], index + 1, null))}
-                            onEdit={(index: number) => {
-                                const promptIndex = isSystemPromptEmpty ? index : index + 1;
-
-                                const newContent = prompt('Edit message:', conversations[promptIndex].content);
-
-                                if (newContent !== null) {
-                                    const newMessage: AppMessageProps = {
-                                        role: 'user',
-                                        content: newContent,
-                                    };
-
-                                    setConversations(conversations.slice(0, promptIndex));
-
-                                    handleMessageSend(newMessage);
-                                }
+                            conversationID={conversationID}
+                            conversationType='chat'
+                            sendMessage={(message, indexNumber, plugin) => {
+                                handleMessageSend(message, null, plugin);
                             }}
-                            isSystemPromptEmpty={isSystemPromptEmpty}
+                            waitingSystemResponse={waitingSystemResponse}
+                            stopSystemResponseRef={stopSystemResponseRef}
                         />
-                    ) : (
-                        <ModeSettings systemPromptContent={systemPromptContent}
-                                      setSystemPromptContent={setSystemPromptContent}/>
-                    )}
-                </div>
-                <div>
-                    <InputArea
-                        conversations={conversations}
-                        conversationID={conversationID}
-                        conversationType='chat'
-                        sendMessage={(message, indexNumber, plugin) => {
-                            handleMessageSend(message, null, plugin);
-                        }}
-                        waitingSystemResponse={waitingSystemResponse}
-                        stopSystemResponseRef={stopSystemResponseRef}
-                    />
+                    </div>
                 </div>
             </div>
         </main>

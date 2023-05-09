@@ -6,6 +6,7 @@ import {useAtom, useAtomValue} from 'jotai';
 import LandingHeader from '@/components/landing/main/header';
 import ChatMain from '@/components/landing/main/chat-main';
 import PromptSide from "@/components/landing/prompt/PromptSide";
+import {PromptCard} from "@/components/landing/prompt/PromptCard";
 
 export default function ChatModePage() {
     const isHiddenSide = useAtomValue(store.isHiddenSideAtom);

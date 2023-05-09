@@ -200,7 +200,7 @@ const InputArea = ({
     };
 
     return (
-        <div className='mx-auto space-y-2 md:w-6/12'>
+        <div className='mx-auto space-y-2 w-full'>
             <div className='mx-auto flex w-full items-center justify-between px-1'>
                 <div className='flex flex-row items-center space-x-1 overflow-x-auto whitespace-nowrap'>
                     <Badge variant='secondary' className='text-xs font-normal'>
