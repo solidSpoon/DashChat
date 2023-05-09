@@ -11,7 +11,9 @@ import {PromptCard} from "@/components/landing/prompt/PromptCard";
 export default function ChatModePage() {
     const isHiddenSide = useAtomValue(store.isHiddenSideAtom);
     const [isShowPromptSide, setIsShowPromptSide] = useAtom(store.isShowPromptSideAtom);
+    const [, setIsShowPromptCardAtom] = useAtom(store.isShowPromptCardAtom);
     const changeShowPromptSide = () => {
+        setIsShowPromptCardAtom(false);
         setIsShowPromptSide(!isShowPromptSide);
     }
 

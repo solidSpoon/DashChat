@@ -451,7 +451,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
 
     return (
         <main
-            className="flex flex-row-reverse gap-2 rounded-lg bg-white/90 dark:bg-[#202327] shadow backdrop-blur md:p-3">
+            className="flex w-full flex-row-reverse gap-2 rounded-lg bg-white/90 dark:bg-[#202327] shadow backdrop-blur md:p-3">
             {!isShowPromptCard &&
                 <div className="w-[350px] flex-none h-full flex flex-col items-end">
                     {!isShowPromptSide &&
@@ -462,18 +462,18 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                         >
                             <TbLayoutSidebarRightExpand className="w-5 h-5"/>
                         </button>}
-                    <div className="w-full h-full bg-amber-200">
+                    <div className="w-full h-full">
                         <ChatNote/>
                     </div>
                 </div>
             }
             <div
                 className=' flex h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
-                <div className='flex h-full w-full flex-col justify-between items-end space-y-3'>
+                <div className='flex h-full w-full flex-col gap-1 justify-between items-end'>
                         {conversations.length > 0 &&
                             <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
                                          waitingSystemResponse={waitingSystemResponse} conversations={conversations}/>}
-                    <div className='mx-auto h-[calc(100%-200px)] w-full overflow-auto md:w-8/12'>
+                    <div className='mx-auto flex-1 w-full overflow-auto'>
                         {conversations.length > 0 ? (
                             <MainContent
                                 systemResponse={systemResponse}

@@ -4,10 +4,6 @@ import {usePrevious} from "@radix-ui/react-use-previous";
 const ChatNote = () => {
     const noteKey = "chatNote";
     const [note,setNote] = useState<string>(localStorage.getItem(noteKey) ?? "");
-    const getNote = () => {
-        console.log("getting note", note);
-        return note
-    };
     useEffect(() => {
         localStorage.setItem(noteKey, note);
     }, [note]);

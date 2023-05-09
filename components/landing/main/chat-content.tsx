@@ -1,24 +1,24 @@
-import { useEffect, useRef } from 'react';
+import {useEffect, useRef} from 'react';
 
-import { useTranslations } from 'next-intl';
+import {useTranslations} from 'next-intl';
 
-import { toast } from 'react-hot-toast';
+import {toast} from 'react-hot-toast';
 
 import store from '@/hooks/store';
-import { useAtomValue } from 'jotai';
+import {useAtomValue} from 'jotai';
 
-import { TbCopy, TbAB2, TbSpeakerphone, TbEdit } from 'react-icons/tb';
+import {TbCopy, TbAB2, TbSpeakerphone, TbEdit} from 'react-icons/tb';
 
-import { renderUserMessage, renderMarkdownMessage } from '@/utils/app/renderMessage';
+import {renderUserMessage, renderMarkdownMessage} from '@/utils/app/renderMessage';
 
 const MainContent = ({
-    systemResponse,
-    waitingSystemResponse,
-    conversations,
-    reGenerate,
-    onEdit,
-    isSystemPromptEmpty,
-}: {
+                         systemResponse,
+                         waitingSystemResponse,
+                         conversations,
+                         reGenerate,
+                         onEdit,
+                         isSystemPromptEmpty,
+                     }: {
     systemResponse: string;
     waitingSystemResponse: boolean;
     conversations: AppMessageProps[];
@@ -34,7 +34,7 @@ const MainContent = ({
 
     useEffect(() => {
         if (endOfMessageRef.current) {
-            endOfMessageRef.current.scrollIntoView({ behavior: 'smooth' });
+            endOfMessageRef.current.scrollIntoView({behavior: 'smooth'});
         }
     }, [conversations, systemResponse]);
 
@@ -59,7 +59,7 @@ const MainContent = ({
     };
 
     return (
-        <div className='mx-auto space-y-3 overflow-auto'>
+        <div className='mx-auto space-y-1 overflow-auto'>
             {conversations
                 .filter((m) => m.role != 'system')
                 .map((message, index) => {
@@ -73,65 +73,73 @@ const MainContent = ({
                     }
 
                     return (
-                        <div className={`flex flex-col space-y-3 p-1 ${isUser ? 'items-end justify-end' : 'items-start justify-start'}`} key={index}>
-                            <div className='flex select-none items-center space-x-2 px-1'>
+                        <div
+                            className={`flex flex-col items-start rounded overflow-hidden px-3 py-6 justify-start ${isUser ? 'bg-gray-200' : 'bg-stone-200'}`}
+                            key={index}>
+                            <div
+                                className={`flex select-none w-full items-center justify-between text-black space-x-2`}>
                                 {isUser ? (
                                     <>
-                                        {!waitingSystemResponse && (
-                                            <>
-                                                <button
-                                                    className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                                                    onClick={() => onEdit(index)}
-                                                >
-                                                    <TbEdit />
-                                                    <span>{t('Edit')}</span>
-                                                </button>
-                                                <button
-                                                    className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                                                    onClick={() => onCopy(isSystemPromptEmpty ? index : index + 1)}
-                                                >
-                                                    <TbCopy />
-                                                    <span>{t('Copy')}</span>
-                                                </button>
-                                            </>
-                                        )}
                                         <p className='text-base font-semibold'>You</p>
+                                        <div>
+                                            {!waitingSystemResponse && (
+                                                <>
+                                                    <button
+                                                        className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                                                        onClick={() => onEdit(index)}
+                                                    >
+                                                        <TbEdit/>
+                                                        <span>{t('Edit')}</span>
+                                                    </button>
+                                                    <button
+                                                        className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                                                        onClick={() => onCopy(isSystemPromptEmpty ? index : index + 1)}
+                                                    >
+                                                        <TbCopy/>
+                                                        <span>{t('Copy')}</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </>
                                 ) : (
                                     <>
                                         <p className='text-base font-semibold'>AI</p>
-                                        {!waitingSystemResponse && (
-                                            <>
-                                                <button
-                                                    className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                                                    onClick={() => onCopy(isSystemPromptEmpty ? index : index + 1)}
-                                                >
-                                                    <TbCopy />
-                                                    <span>{t('Copy')}</span>
-                                                </button>
-                                                <button
-                                                    className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                                                    onClick={() => reGenerate(index)}
-                                                >
-                                                    <TbAB2 />
-                                                    <span>{t('Regenerate')}</span>
-                                                </button>
-                                                <button
-                                                    className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                                                    onClick={() => onSpeech(index)}
-                                                >
-                                                    <TbSpeakerphone />
-                                                    <span>{t('Speech')}</span>
-                                                </button>
-                                            </>
-                                        )}
+                                        <div>
+
+
+                                            {!waitingSystemResponse && (
+                                                <>
+                                                    <button
+                                                        className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                                                        onClick={() => onCopy(isSystemPromptEmpty ? index : index + 1)}
+                                                    >
+                                                        <TbCopy/>
+                                                        <span>{t('Copy')}</span>
+                                                    </button>
+                                                    <button
+                                                        className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                                                        onClick={() => reGenerate(index)}
+                                                    >
+                                                        <TbAB2/>
+                                                        <span>{t('Regenerate')}</span>
+                                                    </button>
+                                                    <button
+                                                        className='inline-flex items-center space-x-0.5 rounded px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                                                        onClick={() => onSpeech(index)}
+                                                    >
+                                                        <TbSpeakerphone/>
+                                                        <span>{t('Speech')}</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                             </div>
                             <div
-                                className={`w-10/12 max-w-7xl space-y-3 rounded-xl p-3 text-sm ${
-                                    isUser ? 'bg-sky-500 text-white dark:bg-sky-600' : 'bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white'
-                                }`}
+                                className={` w-full space-y-3 py-7 px-5 text-sm
+                                dark:bg-neutral-700 dark:text-white`}
                             >
                                 {!isUser ? renderMarkdownMessage(message.content) : renderUserMessage(message.content)}
                                 {streamResponse}
@@ -139,7 +147,7 @@ const MainContent = ({
                         </div>
                     );
                 })}
-            <div ref={endOfMessageRef} />
+            <div ref={endOfMessageRef}/>
         </div>
     );
 };
