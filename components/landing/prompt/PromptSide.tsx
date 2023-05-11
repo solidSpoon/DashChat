@@ -42,6 +42,13 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
     const [prompt, setPrompt] = useState<Prompt | null>(null);
     const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
     const {mutate} = useSWR('chat-prompts');
+    const [userInput,setUserInput] = useAtom(store.chatMsgAtom);
+
+    const handleSendToChat = async (s: string) => {
+        localStorage.setItem('chat-input', s);
+        setUserInput(s);
+    }
+
     const handleShowPrompt = (p: Prompt | null) => {
         if (prompt?.key === p?.key) {
             setPrompt(null);
@@ -63,7 +70,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
     return (
         <>
             {prompt &&
-                <PromptCard prompt={prompt} onClose={() => handleShowPrompt(null)} onUpdate={handleUpdatePrompt}/>}
+                <PromptCard prompt={prompt} onClose={() => handleShowPrompt(null)} onUpdate={handleUpdatePrompt} onSend={handleSendToChat}/>}
             <aside className={'flex-none h-full flex-col gap-2 flex shadow rounded-lg bg-white/90 md:p-3 '}>
                 <div className='flex items-start justify-between border-b'>
                     <div className='p-1 flex-1'>

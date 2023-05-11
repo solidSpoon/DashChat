@@ -7,6 +7,7 @@ import { atomWithStorage } from 'jotai/utils';
 const isHiddenSideAtom = atom(false);
 const isShowPromptSideAtom = atom(true);
 const isShowPromptCardAtom = atom(false);
+const chatMsgAtom = atom('');
 
 // ------------------ Conversation Config ------------------
 
@@ -100,4 +101,5 @@ export default {
     claudeConfigAtom,
     isShowPromptSideAtom,
     isShowPromptCardAtom,
+    chatMsgAtom,
 };

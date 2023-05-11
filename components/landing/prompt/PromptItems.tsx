@@ -52,23 +52,9 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
         await mutate();
     };
 
-    const searchedHistories =
-        userInput !== ''
-            ? unpinnedPrompts.filter((history) => history.name.toLowerCase().includes(userInput.toLowerCase())).sort((a, b) => a.index - b.index)
-            : unpinnedPrompts.filter((history) => !pinnedPrompts.some((pinHistory) => pinHistory.id === history.id)).sort((a, b) => a.index - b.index);
-
     return (
         <>
             <div className='space-y-2 px-2'>
-                <div>
-                    <Input
-                        placeholder={t('Search History')}
-                        value={userInput}
-                        onChange={(e) => {
-                            setUserInput(e.target.value);
-                        }}
-                    />
-                </div>
                 <div className='h-96 w-full space-y-1 overflow-auto md:h-64'>
                     {pinnedPrompts.map((p) => {
                         return (
@@ -102,7 +88,7 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
                             </div>
                         );
                     })}
-                    {searchedHistories.map((p) => {
+                    {unpinnedPrompts.map((p) => {
                         return (
                             <div
                                 key={p.key}

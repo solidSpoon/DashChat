@@ -1,32 +1,33 @@
-import { MutableRefObject, useEffect, useState } from 'react';
+import {MutableRefObject, useEffect, useState} from 'react';
 
-import { useTranslations, useLocale } from 'next-intl';
+import {useTranslations, useLocale} from 'next-intl';
 
-import { toast } from 'react-hot-toast';
+import {toast} from 'react-hot-toast';
 
 import store from '@/hooks/store';
-import { useAtomValue } from 'jotai';
+import {useAtom, useAtomValue} from 'jotai';
 
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import SpeechRecognition, {useSpeechRecognition} from 'react-speech-recognition';
 
-import { IoStopCircle } from 'react-icons/io5';
-import { TbSend, TbShare2 } from 'react-icons/tb';
-import { MdOutlineKeyboardVoice, MdPause } from 'react-icons/md';
+import {IoStopCircle} from 'react-icons/io5';
+import {TbSend, TbShare2} from 'react-icons/tb';
+import {MdOutlineKeyboardVoice, MdPause} from 'react-icons/md';
 
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { Badge } from '@/components/ui/badge';
+import {Badge} from '@/components/ui/badge';
 
-import { customConfig } from '@/config/custom.config';
+import {customConfig} from '@/config/custom.config';
+import useSWR from "swr";
 
 const InputArea = ({
-    conversations,
-    conversationID,
-    conversationType,
-    sendMessage,
-    waitingSystemResponse,
-    stopSystemResponseRef,
-}: {
+                       conversations,
+                       conversationID,
+                       conversationType,
+                       sendMessage,
+                       waitingSystemResponse,
+                       stopSystemResponseRef,
+                   }: {
     conversations: AppMessageProps[];
     conversationID: string;
     conversationType: string;
@@ -38,7 +39,10 @@ const InputArea = ({
 
     const locale = useLocale();
 
-    const [userInput, setUserInput] = useState<string>('');
+    // const [userInput, setUserInput] = useState<string>('');
+
+    const [userInput,setUserInput] = useAtom(store.chatMsgAtom);
+
 
     // commands
     const [showCommands, setShowCommands] = useState<boolean>(false);
@@ -53,7 +57,7 @@ const InputArea = ({
 
     const isNoContextConversation = useAtomValue(store.noContextConversationAtom);
 
-    const { transcript, listening, resetTranscript } = useSpeechRecognition();
+    const {transcript, listening, resetTranscript} = useSpeechRecognition();
     const [isListening, setIsListening] = useState<boolean>(false);
 
     const handleVoiceInput = () => {
@@ -66,16 +70,17 @@ const InputArea = ({
             SpeechRecognition.stopListening();
             setIsListening(false);
         } else {
-            SpeechRecognition.startListening({ language: locale, continuous: true });
+            SpeechRecognition.startListening({language: locale, continuous: true});
             setIsListening(true);
         }
     };
 
-    useEffect(() => {
-        if (transcript) {
-            setUserInput(transcript);
-        }
-    }, [transcript]);
+
+    // useEffect(() => {
+    //     if (transcript) {
+    //         setUserInput(transcript);
+    //     }
+    // }, [transcript]);
 
     const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         // e.target.style.height = 'inherit';
@@ -94,7 +99,7 @@ const InputArea = ({
     };
 
     const handleSend = () => {
-        if (userInput.length === 0) {
+        if ((userInput ?? '').length === 0) {
             toast.error('Please enter something');
             return;
         }
@@ -102,17 +107,17 @@ const InputArea = ({
         let currentPlugin = null;
         let clearedUserInput;
 
-        if (userInput.startsWith('/search ')) {
+        if (userInput ?? ''.startsWith('/search ')) {
             currentPlugin = 'search';
-            clearedUserInput = userInput.split('/search ')[1].trim();
-        } else if (userInput.startsWith('/fetch ')) {
+            clearedUserInput = userInput ?? ''.split('/search ')[1].trim();
+        } else if (userInput ?? ''.startsWith('/fetch ')) {
             currentPlugin = 'fetch';
-            clearedUserInput = userInput.split('/fetch ')[1].trim();
+            clearedUserInput = userInput ?? ''.split('/fetch ')[1].trim();
         } else {
             clearedUserInput = userInput;
         }
 
-        const currentMessage: AppMessageProps = { role: 'user', content: clearedUserInput };
+        const currentMessage: AppMessageProps = {role: 'user', content: clearedUserInput ?? ''};
 
         sendMessage(currentMessage, null, currentPlugin);
 
@@ -223,8 +228,10 @@ const InputArea = ({
                     )}
                 </div>
                 {waitingSystemResponse ? (
-                    <button className='inline-flex items-center space-x-1 rounded border px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200' onClick={handleStopSystemResponse}>
-                        <IoStopCircle />
+                    <button
+                        className='inline-flex items-center space-x-1 rounded border px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200'
+                        onClick={handleStopSystemResponse}>
+                        <IoStopCircle/>
                         <span>{t('Stop Generating')}</span>
                     </button>
                 ) : (
@@ -233,7 +240,7 @@ const InputArea = ({
                             className='flex items-center space-x-1 rounded border px-1 text-sm transition duration-200 ease-in-out hover:bg-gray-200 dark:border-stone-500 dark:hover:bg-stone-600'
                             onClick={handleShareConversation}
                         >
-                            <TbShare2 className='dark:text-white' />
+                            <TbShare2 className='dark:text-white'/>
                             <p className='inline-flex space-x-1'>
                                 <span>{t('Share')}</span>
                                 <span className='hidden md:block'>{t('this conversation')}</span>
@@ -244,7 +251,8 @@ const InputArea = ({
             </div>
             <div className='relative flex'>
                 {enablePlugins && showCommands && (
-                    <div className='absolute bottom-full left-0 z-10 mb-2 w-full rounded-md border border-gray-200 bg-white shadow-lg'>
+                    <div
+                        className='absolute bottom-full left-0 z-10 mb-2 w-full rounded-md border border-gray-200 bg-white shadow-lg'>
                         <ul className='py-1 text-sm'>
                             {filteredCommands.map((command, index) => (
                                 <li
@@ -272,14 +280,14 @@ const InputArea = ({
                         className='rounded-md bg-transparent p-1 font-bold text-stone-800 transition duration-300 ease-in-out hover:text-stone-400 dark:text-stone-400 dark:hover:text-stone-800'
                         aria-label='Voice Input Button'
                     >
-                        {!isListening ? <MdOutlineKeyboardVoice className='text-lg' /> : <MdPause className='text-lg' />}
+                        {!isListening ? <MdOutlineKeyboardVoice className='text-lg'/> : <MdPause className='text-lg'/>}
                     </button>
                     <button
                         onClick={handleSend}
                         className='rounded-md bg-transparent p-1 font-bold text-stone-800 transition duration-300 ease-in-out hover:text-stone-400 dark:text-stone-400 dark:hover:text-stone-800'
                         aria-label='Send Message Button'
                     >
-                        <TbSend className='text-lg' />
+                        <TbSend className='text-lg'/>
                     </button>
                 </div>
             </div>
@@ -291,6 +299,6 @@ const InputArea = ({
 export default InputArea;
 
 const CommandsList = [
-    { name: 'search', description: 'Allow you to search in internet.' },
-    { name: 'fetch', description: 'Fetch Content from website' },
+    {name: 'search', description: 'Allow you to search in internet.'},
+    {name: 'fetch', description: 'Fetch Content from website'},
 ];
