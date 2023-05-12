@@ -21,7 +21,8 @@ import {useAtom} from "jotai/index";
 import store from "@/hooks/store";
 import {chatDb} from "@/utils/db/db";
 import useSWR from "swr";
-
+import {Prompt as PromptDB} from "@prisma/client";
+import {Prisma} from ".prisma/client";
 interface PromptSideProps {
     isShowPromptSide: boolean;
     changeShowPromptSide: () => void;
@@ -64,6 +65,26 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
         setPrompt(p);
         chatDb.prompts.put(p);
         await mutate();
+
+        const body = {
+            id: p.id,
+            name: p.name,
+            content: p.content,
+            pinned: p.pinned,
+        }
+
+        const response = await fetch('/api/nuser/prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            return;
+        }
 
     }
 
