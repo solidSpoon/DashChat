@@ -4,12 +4,12 @@ import {Button} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
 import {Textarea} from "@/components/ui/textarea";
-import {Prompt} from "@/types/entity";
 import useSWR from "swr";
 import {useEffect, useRef, useState} from "react";
 import {Separator} from "@/components/ui/separator";
 import {AiOutlineArrowLeft} from "react-icons/all";
-import {uuid} from "uuidv4";
+import { v4 as uuid } from 'uuid';
+import {Prompt} from "@prisma/client";
 
 interface PromptCardProps {
     prompt: Prompt;
@@ -103,7 +103,7 @@ export function PromptCard({prompt, onClose, onUpdate, onSend}: PromptCardProps)
                     <div className="w-full flex h-0 flex-1 flex-col gap-2 bg-white rounded-xl p-5 shadow">
                         <div className="flex-none">
                             <Label htmlFor="name">Name</Label>
-                            <Input id="name" defaultValue="Write a prompt name"
+                            <Input id="name"
                                    value={tempPrompt.name}
                                    onChange={(e) => setTempPrompt({...tempPrompt, name: e.target.value})}
                             />
@@ -112,7 +112,6 @@ export function PromptCard({prompt, onClose, onUpdate, onSend}: PromptCardProps)
                             <Label htmlFor="content">Username</Label>
                             <Textarea id="content"
                                       className="resize-none h-48"
-                                      defaultValue="Write your prompt content"
                                       value={tempPrompt.content}
                                       onChange={(e) => setTempPrompt({...tempPrompt, content: e.target.value})}
                             />

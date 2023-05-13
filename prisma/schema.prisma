@@ -65,13 +65,16 @@ model Record {
 }
 
 model Prompt {
-  id        String   @id @default(cuid())
-  name      String
-  content   Json?
-  pinned    Boolean  @default(false)
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @default(now()) @map(name: "updated_at")
-  authorId  String
+  id              String   @id @default(cuid())
+  name            String
+  content         String
+  pinned          Boolean  @default(false)
+  clientCreatedAt DateTime @map(name: "client_created_at")
+  clientUpdatedAt DateTime @map(name: "client_updated_at")
+  serverCreatedAt DateTime @default(now()) @map(name: "server_created_at")
+  serverUpdatedAt DateTime @default(now()) @map(name: "server_updated_at")
+  authorId        String
+  deleted         Boolean  @default(false)
 
   author User @relation(fields: [authorId], references: [id])
 

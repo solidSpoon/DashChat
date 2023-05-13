@@ -11,18 +11,14 @@ import {useTheme} from 'next-themes';
 import {HiChatBubbleLeft} from 'react-icons/hi2';
 import {TbLayoutSidebarRightCollapse} from 'react-icons/tb';
 
-import {Avatar, AvatarImage} from '@/components/ui/avatar';
-
 import PromptItems from "@/components/landing/prompt/PromptItems";
 import {PromptCard} from "@/components/landing/prompt/PromptCard";
-import {Prompt} from "@/types/entity";
-import {emptyPrompt} from "@/utils/db/PromptDbUtil";
+import PromptDbUtil from "@/utils/db/PromptDbUtil";
 import {useAtom} from "jotai/index";
 import store from "@/hooks/store";
-import {chatDb} from "@/utils/db/db";
 import useSWR from "swr";
-import {Prompt as PromptDB} from "@prisma/client";
-import {Prisma} from ".prisma/client";
+import {Prompt} from "@prisma/client";
+
 interface PromptSideProps {
     isShowPromptSide: boolean;
     changeShowPromptSide: () => void;
@@ -42,7 +38,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
     const t = useTranslations('landing.chat');
     const [prompt, setPrompt] = useState<Prompt | null>(null);
     const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
-    const {mutate} = useSWR('chat-prompts');
+    const {mutate} = useSWR(PromptDbUtil.REMOTE_KEY);
     const [userInput,setUserInput] = useAtom(store.chatMsgAtom);
 
     const handleSendToChat = async (s: string) => {
@@ -51,7 +47,8 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
     }
 
     const handleShowPrompt = (p: Prompt | null) => {
-        if (prompt?.key === p?.key) {
+        console.log('handleShowPrompt', p, prompt);
+        if (prompt?.id === p?.id) {
             setPrompt(null);
             setIsShowPromptCard(false);
         } else {
@@ -63,29 +60,8 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
 
     const handleUpdatePrompt = async (p: Prompt) => {
         setPrompt(p);
-        chatDb.prompts.put(p);
-        await mutate();
-
-        const body = {
-            id: p.id,
-            name: p.name,
-            content: p.content,
-            pinned: p.pinned,
-        }
-
-        const response = await fetch('/api/nuser/prompt', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-
-            body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-            return;
-        }
-
+        await PromptDbUtil.updatePrompt(p);
+        await mutate(await PromptDbUtil.loadLocalPrompts());
     }
 
     return (
@@ -110,7 +86,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
                 <div className='flex items-center justify-center'>
                     <button
                         className='inline-flex items-center space-x-1 rounded p-1 px-2 text-sm font-medium transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                        onClick={() => setPrompt(emptyPrompt())}
+                        onClick={() => setPrompt(PromptDbUtil.emptyPrompt())}
                     >
                         <HiChatBubbleLeft/>
                         <span>{t('New Prompt')}</span>

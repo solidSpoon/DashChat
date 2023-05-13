@@ -9,14 +9,11 @@ import {useTranslations} from 'next-intl';
 import {toast} from 'react-hot-toast';
 
 import {TiPinOutline, TiDeleteOutline, TiBrush} from 'react-icons/ti';
-
-import {Input} from '@/components/ui/input';
-import {Prompt} from "@/types/entity";
 import {chatDb} from "@/utils/db/db";
 import {uuid} from "uuidv4";
-import {PromptCard} from "@/components/landing/prompt/PromptCard";
 import useSWR from "swr";
-import {fetchPrompts} from "@/utils/db/PromptDbUtil";
+import PromptDbUtil from "@/utils/db/PromptDbUtil";
+import {Prompt} from "@prisma/client";
 
 interface PromptItemsProps {
     showPrompt: (prompt: Prompt | null) => void;
@@ -28,28 +25,32 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
 
     const t = useTranslations('landing.chat');
 
-    const [userInput, setUserInput] = useState<string>('');
+    const [, setUserInput] = useState<string>('');
 
-    const {data, mutate} = useSWR('chat-prompts', fetchPrompts);
+    // const {data, mutate} = useSWR(PromptDbUtil.REMOTE_KEY, PromptDbUtil.loadPrompts);
 
-    const unpinnedPrompts = data?.filter((p) => !p.pinned) ?? [];
-    const pinnedPrompts = data?.filter((p) => p.pinned) ?? [];
+    const {data: localPrompts} = useSWR(PromptDbUtil.LOCAL_KEY, PromptDbUtil.loadLocalPrompts);
+    const {data: remotePrompts, mutate} = useSWR(PromptDbUtil.REMOTE_KEY, PromptDbUtil.loadPrompts);
+
+    const prompts = remotePrompts ?? localPrompts ?? [];
+
+
+    const unpinnedPrompts = prompts?.filter((p) => !p.pinned) ?? [];
+    const pinnedPrompts = prompts?.filter((p) => p.pinned) ?? [];
 
     const onPromptPin = async (p: Prompt) => {
-        p = {...p, pinned: true, key: uuid()};
-        chatDb.prompts.put(p);
-        await mutate();
+        await PromptDbUtil.updatePrompt({...p, pinned: true});
+        await mutate(await PromptDbUtil.loadLocalPrompts());
     };
 
     const onPromptUnpin = async (p: Prompt) => {
-        p = {...p, pinned: false, key: uuid()};
-        chatDb.prompts.put(p);
-        await mutate();
+        await PromptDbUtil.updatePrompt({...p, pinned: false});
+        await mutate(await PromptDbUtil.loadLocalPrompts());
     };
 
     const onPromptDelete = async (p: Prompt) => {
-        chatDb.prompts.delete(p.id ?? '');
-        await mutate();
+        await PromptDbUtil.deletePrompt(p);
+        await mutate(await PromptDbUtil.loadLocalPrompts());
     };
 
     return (
@@ -59,7 +60,7 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
                     {pinnedPrompts.map((p) => {
                         return (
                             <div
-                                key={p.key}
+                                key={p.id}
                                 className='flex w-full select-none items-center justify-between rounded bg-blue-100 p-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:bg-slate-500 dark:hover:bg-stone-600'
                                 onClick={() => showPrompt(p)}
                             >
@@ -91,7 +92,7 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
                     {unpinnedPrompts.map((p) => {
                         return (
                             <div
-                                key={p.key}
+                                key={p.id}
                                 className='flex w-full select-none items-center justify-between rounded p-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
                                 onClick={() => showPrompt(p)}
                             >

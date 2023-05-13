@@ -1,6 +1,6 @@
 // db.ts
 import Dexie, { Table } from 'dexie';
-import { Prompt} from "@/types/entity";
+import {Prompt} from "@prisma/client";
 export const EMPTY_KEY = -1;
 export interface DbBase {
     id: string;
@@ -14,10 +14,14 @@ export class ChatDb extends Dexie {
     // conversations!: Table<Conversation>;
     // conversationItems!: Table<ConversationItem>;
 
+    /*
+  clientUpdatedAt: Date
+  serverUpdatedAt: Date
+     */
     constructor() {
         super('dash-chat-db');
         this.version(1).stores({
-            prompts: 'id, index, name, description', // Primary key and indexed props
+            prompts: 'id, clientUpdatedAt, serverUpdatedAt, name, content', // Primary key and indexed props
             // conversations: '++id, index, name, selected', // Primary key and indexed props
             // conversationItems: '++id, index, conversationId, text, type' // Primary key and indexed props
         });

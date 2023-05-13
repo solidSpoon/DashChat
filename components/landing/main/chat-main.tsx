@@ -111,8 +111,10 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 }
 
                 const data = await response.json();
+                console.log('dddd',data);
 
-                if (!data) {
+                //{user: null}
+                if (!data.user) {
                     return;
                 }
 

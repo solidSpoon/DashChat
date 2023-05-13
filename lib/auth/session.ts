@@ -16,7 +16,9 @@ export async function getCurrentUser() {
 }
 
 export async function getCurrentUserProfile() {
+    console.log('getCurrentUserProfile');
     const user = await getCurrentUser();
+    console.log('user', user);
 
     if (!user) {
         return null;
