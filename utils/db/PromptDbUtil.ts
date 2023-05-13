@@ -135,7 +135,7 @@ export default class PromptDbUtil {
             if (localPrompt) {
                 // 如果本地提示的 clientUpdatedAt 小于云端提示的 clientUpdatedAt，
                 // 则使用云端的提示更新本地提示
-                if (localPrompt.clientUpdatedAt < cloudPrompt.clientUpdatedAt) {
+                if (localPrompt.clientUpdatedAt <= cloudPrompt.clientUpdatedAt) {
                     await chatDb.prompts.put(cloudPrompt);
                 }
             } else {
@@ -158,10 +158,10 @@ export default class PromptDbUtil {
     public static toDTO = (prompt: Prompt): any => {
         return {
             ...prompt,
-            clientCreatedAt: moment(prompt.clientCreatedAt).format(),
-            clientUpdatedAt: moment(prompt.clientUpdatedAt).format(),
-            serverCreatedAt: moment(prompt.serverCreatedAt).format(),
-            serverUpdatedAt: moment(prompt.serverUpdatedAt).format(),
+            clientCreatedAt: moment(prompt.clientCreatedAt).toISOString(),
+            clientUpdatedAt: moment(prompt.clientUpdatedAt).toISOString(),
+            serverCreatedAt: moment(prompt.serverCreatedAt).toISOString(),
+            serverUpdatedAt: moment(prompt.serverUpdatedAt).toISOString(),
         };
     }
 

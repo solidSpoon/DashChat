@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         where: {
             authorId: user.id,
             serverUpdatedAt: {
-                gt: date,
+                gte: date,
             }
         },
         select: {
