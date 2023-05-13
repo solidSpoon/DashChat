@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         where: {
             authorId: user.id,
             serverUpdatedAt: {
-                gte: date,
+                gt: date,
             }
         },
         select: {
@@ -120,9 +120,9 @@ export async function PUT(request: NextRequest) {
                 data: {
                     ...promptToUpdate,
                     authorId: user.id,
-                    clientCreatedAt: promptToUpdate.clientUpdatedAt.toISOString(),
+                    clientCreatedAt: promptToUpdate.clientCreatedAt.toISOString(),
                     clientUpdatedAt: promptToUpdate.clientUpdatedAt.toISOString(),
-                    serverCreatedAt: promptToUpdate.serverUpdatedAt.toISOString(),
+                    serverCreatedAt: promptToUpdate.serverCreatedAt.toISOString(),
                     serverUpdatedAt: moment().toISOString(),
                 },
             });
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest) {
                 data: {
                     ...promptToUpdate,
                     authorId: user.id,
-                    clientCreatedAt: promptToUpdate.clientUpdatedAt.toISOString(),
+                    clientCreatedAt: promptToUpdate.clientCreatedAt.toISOString(),
                     clientUpdatedAt: promptToUpdate.clientUpdatedAt.toISOString(),
                     serverCreatedAt: moment().toISOString(),
                     serverUpdatedAt: moment().toISOString(),
