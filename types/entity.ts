@@ -48,17 +48,26 @@ export class MyChat extends BaseEntity {
     }
 }
 
+export type Role = 'user' | 'assistant' | 'system' | 'blank';
+
 export class MyChatMessage extends BaseEntity {
     chatId: string;
-    content: string;
-    role: string;
+    public content: string;
+    role: Role;
     pinned: boolean;
 
     constructor(data?: Partial<MyChatMessage>) {
         super(data);
         this.chatId = data?.chatId || '';
         this.content = data?.content || '';
-        this.role = data?.role || '';
+        this.role = data?.role || 'blank';
         this.pinned = data?.pinned || false;
+    }
+    public toOpenAIMessage(): OpenAIMessage {
+        const role = this.role === 'blank' ? 'user' : this.role;
+        return {
+            role: role,
+            content: this.content
+        };
     }
 }

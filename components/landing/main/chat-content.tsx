@@ -10,6 +10,7 @@ import {useAtomValue} from 'jotai';
 import {TbCopy, TbAB2, TbSpeakerphone, TbEdit} from 'react-icons/tb';
 
 import {renderUserMessage, renderMarkdownMessage} from '@/utils/app/renderMessage';
+import {MyChatMessage} from "@/types/entity";
 
 const MainContent = ({
                          systemResponse,
@@ -21,7 +22,7 @@ const MainContent = ({
                      }: {
     systemResponse: string;
     waitingSystemResponse: boolean;
-    conversations: AppMessageProps[];
+    conversations: MyChatMessage[];
     reGenerate: (index: number) => void;
     onEdit: (index: number) => void;
     isSystemPromptEmpty: boolean;

@@ -9,6 +9,7 @@ import BarLoader from 'react-spinners/BarLoader';
 import {BiCoin, BiMoney} from 'react-icons/bi';
 
 import calculateModelPrice from '@/utils/provider/openai/calculateModelPrice';
+import {MyChatMessage} from "@/types/entity";
 
 const ContentHead = ({
                          chatTitle,
@@ -19,7 +20,7 @@ const ContentHead = ({
     chatTitle: string;
     chatTitleResponse: string;
     waitingSystemResponse: boolean;
-    conversations: AppMessageProps[];
+    conversations: MyChatMessage[];
 }) => {
     const t = useTranslations('landing.main');
 

@@ -19,6 +19,7 @@ import {Badge} from '@/components/ui/badge';
 
 import {customConfig} from '@/config/custom.config';
 import useSWR from "swr";
+import {MyChatMessage} from "@/types/entity";
 
 const InputArea = ({
                        conversations,
@@ -28,10 +29,10 @@ const InputArea = ({
                        waitingSystemResponse,
                        stopSystemResponseRef,
                    }: {
-    conversations: AppMessageProps[];
+    conversations: MyChatMessage[];
     conversationID: string;
     conversationType: string;
-    sendMessage: (message: AppMessageProps, indexNumber?: number | null, plugin?: any) => void;
+    sendMessage: (message: MyChatMessage, indexNumber?: number | null, plugin?: any) => void;
     waitingSystemResponse: boolean;
     stopSystemResponseRef: MutableRefObject<boolean>;
 }) => {
@@ -41,7 +42,7 @@ const InputArea = ({
 
     // const [userInput, setUserInput] = useState<string>('');
 
-    const [userInput,setUserInput] = useAtom(store.chatMsgAtom);
+    const [userInput, setUserInput] = useAtom(store.chatMsgAtom);
 
 
     // commands
@@ -117,7 +118,10 @@ const InputArea = ({
             clearedUserInput = userInput;
         }
 
-        const currentMessage: AppMessageProps = {role: 'user', content: clearedUserInput ?? ''};
+        const currentMessage = new MyChatMessage({
+            role: 'user',
+            content: clearedUserInput ?? '',
+        });
 
         sendMessage(currentMessage, null, currentPlugin);
 

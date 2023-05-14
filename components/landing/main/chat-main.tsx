@@ -28,6 +28,8 @@ import {User} from '@prisma/client';
 import {FiLayout} from "react-icons/fi";
 import {BsReverseLayoutSidebarReverse, TbLayoutSidebarRight, TbLayoutSidebarRightExpand} from "react-icons/all";
 import ChatNote from "@/components/landing/main/chat-note";
+import {MyChatMessage} from "@/types/entity";
+import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
 
 interface UserSettingsProps {
     user: User;
@@ -36,6 +38,70 @@ interface UserSettingsProps {
 interface ChatMainProps {
     isShowPromptSide: boolean;
     changeShowPromptSide: () => void;
+}
+
+function getConfigPlayload(serviceProvider: "Azure" | "Claude" | "Custom" | "Hugging Face" | "OpenAI" | "Team" | "Cohere" | "Extension", openAIConfig: OpenAIConfigProps, azureConfig: Awaited<{
+    apiEndpoint: string;
+    apiKey: string;
+    apiDeploymentName: string;
+    apiTemperature: number;
+    apiModel: string
+}>, teamConfig: Awaited<{ accessCode: string }>, huggingFaceConfig: Awaited<{
+    huggingFaceModel: string;
+    accessToken: string
+}>, cohereConfig: Awaited<{ apiKey: string; model: string }>, claudeConfig: Awaited<{
+    apiKey: string;
+    apiTemperature: number;
+    apiModel: string
+}>) {
+    let configPayload;
+
+    switch (serviceProvider) {
+        case 'OpenAI':
+            configPayload = {
+                apiKey: openAIConfig.apiKey,
+                apiEndpoint: openAIConfig.apiEndpoint,
+                apiModel: openAIConfig.apiModel,
+                apiTemperature: openAIConfig.apiTemperature,
+            };
+            break;
+        case 'Azure':
+            configPayload = {
+                apiKey: azureConfig.apiKey,
+                apiEndpoint: azureConfig.apiEndpoint,
+                apiModel: azureConfig.apiModel,
+                apiTemperature: azureConfig.apiTemperature,
+                apiDeploymentName: azureConfig.apiDeploymentName,
+            };
+            break;
+        case 'Team':
+            configPayload = {
+                accessCode: teamConfig.accessCode,
+            };
+            break;
+        case 'Hugging Face':
+            configPayload = {
+                model: huggingFaceConfig.huggingFaceModel,
+                accessToken: huggingFaceConfig.accessToken,
+            };
+            break;
+        case 'Cohere':
+            configPayload = {
+                model: cohereConfig.model,
+                apiKey: cohereConfig.apiKey,
+            };
+            break;
+        case 'Claude':
+            configPayload = {
+                model: claudeConfig.apiModel,
+                apiKey: claudeConfig.apiKey,
+                apiTemperature: claudeConfig.apiTemperature,
+            };
+            break;
+        default:
+            break;
+    }
+    return configPayload;
 }
 
 const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
@@ -59,7 +125,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
 
     const [hasError, setHasError] = useState<boolean>(false);
 
-    const [conversations, setConversations] = useState<AppMessageProps[]>([]);
+    const [messages, setMessages] = useState<MyChatMessage[]>([]);
     const [conversationID, setConversationID] = useState<string>(generateHash(16));
 
     const [chatTitle, setChatTitle] = useState<string>('Chat');
@@ -111,7 +177,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 }
 
                 const data = await response.json();
-                console.log('dddd',data);
+                console.log('dddd', data);
 
                 //{user: null}
                 if (!data.user) {
@@ -140,71 +206,25 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             const chatHistory = JSON.parse(chatValue);
 
             setChatTitle(chatHistory.title);
-            setConversations(chatHistory.messages);
+            setMessages(chatHistory.messages);
         }
     }, [share]);
 
-    const handleMessageSend = async (message: AppMessageProps, indexNumber?: number | null, plugin?: PluginProps | null) => {
+    const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
         setWaitingSystemResponse(true);
-
+        const sysMsg = new MyChatMessage({
+            role: 'system',
+            content: systemPromptContent,
+        })
         if (!isNoContextConversation) {
-            isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                ? setConversations((prev) => [...prev, message])
-                : setConversations((prev) => [{role: 'system', content: systemPromptContent}, ...prev, message]);
+
+            isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                ? setMessages((prev) => [...prev, message])
+                : setMessages((prev) => [sysMsg, ...prev, message]);
         } else {
-            isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? setConversations([message]) : setConversations([{
-                role: 'system',
-                content: systemPromptContent
-            }, message]);
+            isSystemPromptEmpty || messages.find((c) => c.role === 'system') ? setMessages([message]) : setMessages([sysMsg, message]);
         }
-
-        let configPayload;
-
-        switch (serviceProvider) {
-            case 'OpenAI':
-                configPayload = {
-                    apiKey: openAIConfig.apiKey,
-                    apiEndpoint: openAIConfig.apiEndpoint,
-                    apiModel: openAIConfig.apiModel,
-                    apiTemperature: openAIConfig.apiTemperature,
-                };
-                break;
-            case 'Azure':
-                configPayload = {
-                    apiKey: azureConfig.apiKey,
-                    apiEndpoint: azureConfig.apiEndpoint,
-                    apiModel: azureConfig.apiModel,
-                    apiTemperature: azureConfig.apiTemperature,
-                    apiDeploymentName: azureConfig.apiDeploymentName,
-                };
-                break;
-            case 'Team':
-                configPayload = {
-                    accessCode: teamConfig.accessCode,
-                };
-                break;
-            case 'Hugging Face':
-                configPayload = {
-                    model: huggingFaceConfig.huggingFaceModel,
-                    accessToken: huggingFaceConfig.accessToken,
-                };
-                break;
-            case 'Cohere':
-                configPayload = {
-                    model: cohereConfig.model,
-                    apiKey: cohereConfig.apiKey,
-                };
-                break;
-            case 'Claude':
-                configPayload = {
-                    model: claudeConfig.apiModel,
-                    apiKey: claudeConfig.apiKey,
-                    apiTemperature: claudeConfig.apiTemperature,
-                };
-                break;
-            default:
-                break;
-        }
+        let configPayload = getConfigPlayload(serviceProvider, openAIConfig, azureConfig, teamConfig, huggingFaceConfig, cohereConfig, claudeConfig);
 
         let pluginResponse = null;
         let pluginPrompt = null;
@@ -237,39 +257,34 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             }
         }
 
-        let messagesPayload: AppMessageProps[] = [];
+        let messagesPayload: MyChatMessage[] = [];
 
         if (plugin && enablePlugin && pluginResponse && pluginPrompt) {
+            const pluginMessage = new MyChatMessage({
+                role: 'system',
+                content: pluginPrompt,
+            });
             if (!isNoContextConversation) {
-                isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                    ? (messagesPayload = [...conversations, {role: 'system', content: pluginPrompt}, message])
-                    : (messagesPayload = [{
-                        role: 'system',
-                        content: systemPromptContent
-                    }, ...conversations, {role: 'system', content: pluginPrompt}, message]);
+                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                    ? (messagesPayload = [...messages, sysMsg, message])
+                    : (messagesPayload = [sysMsg, ...messages, pluginMessage, message]);
             } else {
-                isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                    ? (messagesPayload = [{role: 'system', content: pluginPrompt}, message])
-                    : (messagesPayload = [{role: 'system', content: systemPromptContent}, {
-                        role: 'system',
-                        content: pluginPrompt
-                    }, message]);
+                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                    ? (messagesPayload = [sysMsg, message])
+                    : (messagesPayload = [sysMsg, pluginMessage, message]);
             }
         } else {
             if (!isNoContextConversation) {
-                isSystemPromptEmpty || conversations.find((c) => c.role === 'system')
-                    ? (messagesPayload = [...conversations, message])
-                    : (messagesPayload = [{role: 'system', content: systemPromptContent}, ...conversations, message]);
+                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                    ? (messagesPayload = [...messages, message])
+                    : (messagesPayload = [sysMsg, ...messages, message]);
             } else {
-                isSystemPromptEmpty || conversations.find((c) => c.role === 'system') ? (messagesPayload = [message]) : (messagesPayload = [{
-                    role: 'system',
-                    content: systemPromptContent
-                }, message]);
+                isSystemPromptEmpty || messages.find((c) => c.role === 'system') ? (messagesPayload = [message]) : (messagesPayload = [sysMsg, message]);
             }
         }
 
         if (indexNumber && indexNumber >= 0) {
-            setConversations((prev) => prev.slice(0, indexNumber));
+            setMessages((prev) => prev.slice(0, indexNumber));
             messagesPayload = messagesPayload.slice(0, indexNumber);
         }
 
@@ -282,7 +297,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 stream: enableStreamMessages,
                 serviceProvider: serviceProvider,
                 config: configPayload,
-                messages: messagesPayload,
+                messages: messagesPayload.map((m) => m.toOpenAIMessage()),
             }),
         });
 
@@ -303,7 +318,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         }
 
         setSystemResponse('');
-        setConversations((prev) => [...prev, {role: 'assistant', content: ''}]);
+        setMessages((prev) => [...prev, new MyChatMessage({role: 'system', content: '...'})]);
 
         const reader = data.getReader();
         const decoder = new TextDecoder();
@@ -325,12 +340,12 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             currentResponseMessage += chunkValue;
         }
 
-        setConversations((prev) => [
+        setMessages((prev) => [
             ...prev.slice(0, -1),
-            {
+            new MyChatMessage({
                 role: 'assistant',
                 content: currentResponseMessage,
-            },
+            }),
         ]);
 
         setWaitingSystemResponse(false);
@@ -389,7 +404,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                     type: 'chat',
                     title: currentChatTitle,
                     messages: [
-                        ...conversations,
+                        ...messages,
                         message,
                         {
                             role: 'assistant',
@@ -404,7 +419,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                     type: 'chat',
                     title: chatTitle,
                     messages: [
-                        ...conversations,
+                        ...messages,
                         message,
                         {
                             role: 'assistant',
@@ -426,7 +441,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                         type: 'chat',
                         title: chatTitle,
                         messages: [
-                            ...conversations,
+                            ...messages,
                             message,
                             {
                                 role: 'assistant',
@@ -472,28 +487,28 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             <div
                 className=' flex h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
                 <div className='flex h-full w-full flex-col gap-1 justify-between items-end'>
-                        {conversations.length > 0 &&
-                            <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
-                                         waitingSystemResponse={waitingSystemResponse} conversations={conversations}/>}
+                    {messages.length > 0 &&
+                        <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
+                                     waitingSystemResponse={waitingSystemResponse} conversations={messages}/>}
                     <div className='mx-auto flex-1 w-full overflow-auto'>
-                        {conversations.length > 0 ? (
+                        {messages.length > 0 ? (
                             <MainContent
                                 systemResponse={systemResponse}
                                 waitingSystemResponse={waitingSystemResponse}
-                                conversations={conversations}
-                                reGenerate={(index: number) => (isSystemPromptEmpty ? handleMessageSend(conversations[index - 1], index, null) : handleMessageSend(conversations[index], index + 1, null))}
+                                conversations={messages}
+                                reGenerate={(index: number) => (isSystemPromptEmpty ? handleMessageSend(messages[index - 1], index, null) : handleMessageSend(messages[index], index + 1, null))}
                                 onEdit={(index: number) => {
                                     const promptIndex = isSystemPromptEmpty ? index : index + 1;
 
-                                    const newContent = prompt('Edit message:', conversations[promptIndex].content);
+                                    const newContent = prompt('Edit message:', messages[promptIndex].content);
 
                                     if (newContent !== null) {
-                                        const newMessage: AppMessageProps = {
+                                        const newMessage = new MyChatMessage({
                                             role: 'user',
                                             content: newContent,
-                                        };
+                                        });
 
-                                        setConversations(conversations.slice(0, promptIndex));
+                                        setMessages(messages.slice(0, promptIndex));
 
                                         handleMessageSend(newMessage);
                                     }
@@ -507,7 +522,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                     </div>
                     <div className="w-full">
                         <InputArea
-                            conversations={conversations}
+                            conversations={messages}
                             conversationID={conversationID}
                             conversationType='chat'
                             sendMessage={(message, indexNumber, plugin) => {

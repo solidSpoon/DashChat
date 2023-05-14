@@ -1,7 +1,7 @@
 // db.ts
 import Dexie, { Table } from 'dexie';
 import {Chat, Message, Prompt} from "@prisma/client";
-import {MyChat} from "@/types/entity";
+import {MyChat, MyChatMessage} from "@/types/entity";
 export const EMPTY_KEY = -1;
 export interface DbBase {
     id: string;
@@ -13,7 +13,7 @@ export class ChatDb extends Dexie {
     // We just tell the typing system this is the case
     prompts!: Table<Prompt>;
     chats!: Table<MyChat>;
-    messages!: Table<Message>;
+    messages!: Table<MyChatMessage>;
     /*
   clientUpdatedAt: Date
   serverUpdatedAt: Date

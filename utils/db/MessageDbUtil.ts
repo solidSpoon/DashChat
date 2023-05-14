@@ -1,18 +1,22 @@
 import {BaseDbUtil, SyncOperation} from "@/utils/db/BaseDbUtil";
-import {MyChat} from "@/types/entity";
+import {MyChat, MyChatMessage} from "@/types/entity";
 import {chatDb} from "@/utils/db/db";
 import Dexie, {IndexableType} from "dexie";
+import {Message} from "@prisma/client";
 
-export class ChatDbUtil extends BaseDbUtil<MyChat> {
+
+
+export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
     protected readonly APT_PATH = '/api/sync/message';
     public readonly LOCAL_KEY = 'chat-message-local';
     public readonly REMOTE_KEY = 'chat-message-remote';
-    protected table: Dexie.Table<MyChat, IndexableType> = chatDb.chats;
-    emptyEntity(): MyChat {
-        return new MyChat();
+    protected table: Dexie.Table<MyChatMessage, IndexableType> = chatDb.messages;
+
+    emptyEntity(): MyChatMessage {
+        return new MyChatMessage();
     }
 
-    protected async loadCloudEntities(date: Date): Promise<MyChat[]> {
+    protected async loadCloudEntities(date: Date): Promise<MyChatMessage[]> {
         console.log("loadCloudChats", date);
         const response = await fetch(this.APT_PATH + '?after=' + date.toISOString(), {
             method: 'GET',
@@ -30,7 +34,7 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
     }
 
 
-    protected async updateCloudEntities(ps: MyChat[]): Promise<void> {
+    protected async updateCloudEntities(ps: MyChatMessage[]): Promise<void> {
         if (!ps || ps.length === 0) {
             console.log("no chats to update");
             return;
@@ -50,11 +54,12 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
         throw new Error("cannot update cloud chat");
     }
 
-    private static instance: ChatDbUtil;
-    public static getInstance(): ChatDbUtil {
-        if (!ChatDbUtil.instance) {
-            ChatDbUtil.instance = new ChatDbUtil();
+    private static instance: MessageDbUtil;
+
+    public static getInstance(): MessageDbUtil {
+        if (!MessageDbUtil.instance) {
+            MessageDbUtil.instance = new MessageDbUtil();
         }
-        return ChatDbUtil.instance;
+        return MessageDbUtil.instance;
     }
 }
