@@ -29,8 +29,8 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
 
     // const {data, mutate} = useSWR(PromptDbUtil.REMOTE_KEY, PromptDbUtil.loadPrompts);
 
-    const {data: localPrompts} = useSWR(PromptDbUtil.LOCAL_KEY, PromptDbUtil.loadLocalPrompts);
-    const {data: remotePrompts, mutate} = useSWR(PromptDbUtil.REMOTE_KEY, PromptDbUtil.loadPrompts);
+    const {data: localPrompts} = useSWR(PromptDbUtil.instance.LOCAL_KEY, PromptDbUtil.instance.loadLocalEntities);
+    const {data: remotePrompts, mutate} = useSWR(PromptDbUtil.instance.REMOTE_KEY, PromptDbUtil.instance.loadEntities);
 
     const prompts = remotePrompts ?? localPrompts ?? [];
 
@@ -39,18 +39,18 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
     const pinnedPrompts = prompts?.filter((p) => p.pinned) ?? [];
 
     const onPromptPin = async (p: Prompt) => {
-        await PromptDbUtil.updatePrompt({...p, pinned: true});
-        await mutate(await PromptDbUtil.loadLocalPrompts());
+        await PromptDbUtil.instance.updateEntity({...p, pinned: true});
+        await mutate(await PromptDbUtil.instance.loadLocalEntities());
     };
 
     const onPromptUnpin = async (p: Prompt) => {
-        await PromptDbUtil.updatePrompt({...p, pinned: false});
-        await mutate(await PromptDbUtil.loadLocalPrompts());
+        await PromptDbUtil.instance.updateEntity({...p, pinned: false});
+        await mutate(await PromptDbUtil.instance.loadLocalEntities());
     };
 
     const onPromptDelete = async (p: Prompt) => {
-        await PromptDbUtil.deletePrompt(p);
-        await mutate(await PromptDbUtil.loadLocalPrompts());
+        await PromptDbUtil.instance.deleteEntity(p);
+        await mutate(await PromptDbUtil.instance.loadLocalEntities());
     };
 
     return (

@@ -38,7 +38,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
     const t = useTranslations('landing.chat');
     const [prompt, setPrompt] = useState<Prompt | null>(null);
     const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
-    const {mutate} = useSWR(PromptDbUtil.REMOTE_KEY);
+    const {mutate} = useSWR(PromptDbUtil.instance.REMOTE_KEY);
     const [userInput,setUserInput] = useAtom(store.chatMsgAtom);
 
     const handleSendToChat = async (s: string) => {
@@ -60,8 +60,8 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
 
     const handleUpdatePrompt = async (p: Prompt) => {
         setPrompt(p);
-        await PromptDbUtil.updatePrompt(p);
-        await mutate(await PromptDbUtil.loadLocalPrompts());
+        await PromptDbUtil.instance.updateEntity(p);
+        await mutate(await PromptDbUtil.instance.loadLocalEntities());
     }
 
     return (
@@ -86,7 +86,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
                 <div className='flex items-center justify-center'>
                     <button
                         className='inline-flex items-center space-x-1 rounded p-1 px-2 text-sm font-medium transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                        onClick={() => setPrompt(PromptDbUtil.emptyPrompt())}
+                        onClick={() => setPrompt(PromptDbUtil.instance.emptyEntity())}
                     >
                         <HiChatBubbleLeft/>
                         <span>{t('New Prompt')}</span>

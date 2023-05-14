@@ -5,6 +5,7 @@ import {database} from "@/lib/database";
 import {Prompt} from "@prisma/client";
 import moment from "moment";
 import PromptDbUtil from "@/utils/db/PromptDbUtil";
+import {PromptConverter} from "@/utils/db/Converter";
 
 /**
  * 用于同步数据, 从服务器下载数据到客户端
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
         success: 'true',
-        prompts: prompts.map(p => PromptDbUtil.toDTO(p)),
+        prompts: prompts.map(p =>PromptConverter.instance.toDTO(p)),
     });
 }
 
@@ -97,7 +98,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 解析请求体中的 prompts
-    const promptsToUpdate: Prompt[] = (await request.json()).map((p: any) => PromptDbUtil.fromDTO(p));
+    const promptsToUpdate: Prompt[] = (await request.json()).map((p: any) => PromptConverter.instance.fromDTO(p));
 
     if (promptsToUpdate.length === 0) {
         return NextResponse.json({success: 'true'});
