@@ -38,8 +38,8 @@ export default class PromptDbUtil {
         console.log("sync prompts done");
     }
 
-    public static loadLocalPromptAfter = async (after: Date): Promise<Prompt[]> => {
-        return chatDb.prompts.filter(p => !p.deleted && p.clientUpdatedAt > after).toArray();
+    private static loadLocalPromptAfter = async (after: Date): Promise<Prompt[]> => {
+        return chatDb.prompts.filter(p => p.clientUpdatedAt > after).toArray();
     }
 
     /**

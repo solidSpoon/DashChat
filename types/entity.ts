@@ -33,7 +33,7 @@ export class MyPrompt extends BaseEntity {
     }
 }
 
-export type ChatType = 'chat';
+export type ChatType = 'chat' | 'blank';
 
 export class MyChat extends BaseEntity {
     topic: string;
@@ -44,7 +44,7 @@ export class MyChat extends BaseEntity {
         super(data);
         this.topic = data?.topic || '';
         this.pinned = data?.pinned || false;
-        this.type = data?.type || 'chat';
+        this.type = data?.type || 'blank';
     }
 }
 

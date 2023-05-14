@@ -19,6 +19,8 @@ export interface SyncOperation<T extends BaseEntity> {
 }
 
 export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> implements SyncOperation<T> {
+    protected name: string = 'entity'
+
     private readonly enableCloudSync = true;
 
     public abstract readonly REMOTE_KEY: string;
@@ -61,20 +63,21 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
     }
 
     private async syncEntities() {
-        console.log("sync entities");
+        console.log(`sync ${this.name}`);
         const maxServerUpdatedAt = await this.getLocalMaxServerUpdatedAt();
+        console.log(`maxServerUpdatedAt ${this.name}`, maxServerUpdatedAt);
         let unSyncedEntities = await this.loadLocalEntitiesAfter(maxServerUpdatedAt);
-        console.log("unSyncedEntities", unSyncedEntities);
+        console.log(`un synced ${this.name}`, unSyncedEntities);
         await this.updateCloudEntities(unSyncedEntities);
-        console.log("updateCloudEntities done");
+        console.log(`update cloud ${this.name} done`);
         const cloudEntities = await this.loadCloudEntities(maxServerUpdatedAt);
-        console.log("cloudEntities", cloudEntities);
+        console.log(`load cloud ${this.name} done`, cloudEntities);
         await this.updateLocalEntities(cloudEntities);
-        console.log("sync entities done");
+        console.log(`sync ${this.name} done`);
     }
 
     private loadLocalEntitiesAfter = async (after: Date): Promise<T[]> => {
-        return this.table.filter(p => !p.deleted && p.clientUpdatedAt > after).toArray();
+        return this.table.filter(p =>  p.clientUpdatedAt > after).toArray();
     }
 
     /**
@@ -97,11 +100,11 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
     private async updateLocalEntities(cloudEntities: T[]) {
         for (const cloudEntity of cloudEntities) {
             // 获取本地数据库中的相同ID的提示
-            const localPrompt = await chatDb.prompts.get(cloudEntity.id);
-            if (localPrompt) {
+            const localEntity = await this.table.get(cloudEntity.id);
+            if (localEntity) {
                 // 如果本地提示的 clientUpdatedAt 小于云端提示的 clientUpdatedAt，
                 // 则使用云端的提示更新本地提示
-                if (localPrompt.clientUpdatedAt <= cloudEntity.clientUpdatedAt) {
+                if (localEntity.clientUpdatedAt <= cloudEntity.clientUpdatedAt) {
                     await this.table.put(cloudEntity);
                 }
             } else {

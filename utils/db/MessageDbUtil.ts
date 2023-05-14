@@ -11,6 +11,7 @@ export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
     public readonly LOCAL_KEY = 'chat-message-local';
     public readonly REMOTE_KEY = 'chat-message-remote';
     protected table: Dexie.Table<MyChatMessage, IndexableType> = chatDb.messages;
+    protected name: string = 'chat-message';
 
     emptyEntity(): MyChatMessage {
         return new MyChatMessage();

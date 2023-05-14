@@ -78,7 +78,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // 解析请求体中的 prompts
-    const entitiesToUpdate: Chat[] = (await request.json()).map((p: any) => ChatConverter.instance.fromDTO(p));
+    let json = await request.json();
+    console.log(json);
+    const entitiesToUpdate: Chat[] = json.map((p: any) => ChatConverter.instance.fromDTO(p));
 
     if (entitiesToUpdate.length === 0) {
         return NextResponse.json({success: 'true'});

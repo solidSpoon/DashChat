@@ -2,7 +2,7 @@
 
 import {useEffect, useState, useRef} from 'react';
 
-import {useSearchParams} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 
 import {useTranslations} from 'next-intl';
 
@@ -25,11 +25,14 @@ import {getSearchFromGoogleProgrammableSearchEngine} from '@/utils/plugins/searc
 import {fetchContent} from '@/utils/plugins/fetch_content';
 
 import {User} from '@prisma/client';
-import {FiLayout} from "react-icons/fi";
-import {BsReverseLayoutSidebarReverse, TbLayoutSidebarRight, TbLayoutSidebarRightExpand} from "react-icons/all";
+import {TbLayoutSidebarRightExpand} from "react-icons/all";
 import ChatNote from "@/components/landing/main/chat-note";
-import {MyChatMessage} from "@/types/entity";
+import {MyChat, MyChatMessage} from "@/types/entity";
+import {getResp} from "@/utils/app/QaUtil";
 import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
+import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
+import useSWR from "swr";
+import {router} from "next/client";
 
 interface UserSettingsProps {
     user: User;
@@ -108,6 +111,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     const searchParams = useSearchParams();
 
     const share = searchParams?.get('share');
+    const router = useRouter();
 
     const t = useTranslations('landing.main');
 
@@ -157,6 +161,11 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
 
     const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
 
+    const {
+        data: chats,
+        mutate: chatMutate
+    } = useSWR(ChatDbUtil.getInstance().REMOTE_KEY, ChatDbUtil.getInstance().loadEntities);
+    const {data: allMessages} = useSWR(MessageDbUtil.getInstance().REMOTE_KEY, MessageDbUtil.getInstance().loadEntities);
     // Plugins
 
     // Search
@@ -191,30 +200,20 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         }
     }, [userSettings]);
 
-    const enableSync = userSettings?.user.allowRecordCloudSync;
-
-    useEffect(() => {
-        if (share) {
-            setConversationID(share);
-
-            const chatValue = localStorage.getItem('histories-chat-' + share);
-
-            if (!chatValue) {
-                return;
-            }
-
-            const chatHistory = JSON.parse(chatValue);
-
-            setChatTitle(chatHistory.title);
-            setMessages(chatHistory.messages);
-        }
-    }, [share]);
-
     const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
+        let chat = chats?.find((c) => c.id === share) ?? new MyChat();
+        console.log('share', share, chat);
+        chat = {
+            ...chat,
+            type: 'chat',
+            topic: 'balalalal',
+        }
+        message.chatId = chat.id;
         setWaitingSystemResponse(true);
         const sysMsg = new MyChatMessage({
             role: 'system',
             content: systemPromptContent,
+            chatId: chat.id,
         })
         if (!isNoContextConversation) {
 
@@ -263,6 +262,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             const pluginMessage = new MyChatMessage({
                 role: 'system',
                 content: pluginPrompt,
+                chatId: chat.id,
             });
             if (!isNoContextConversation) {
                 isSystemPromptEmpty || messages.find((c) => c.role === 'system')
@@ -288,64 +288,25 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             messagesPayload = messagesPayload.slice(0, indexNumber);
         }
 
-        const response = await fetch('/api/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                stream: enableStreamMessages,
-                serviceProvider: serviceProvider,
-                config: configPayload,
-                messages: messagesPayload.map((m) => m.toOpenAIMessage()),
-            }),
-        });
-
-        if (!response.ok) {
-            setWaitingSystemResponse(false);
-            setHasError(true);
-            toast.error('Something went wrong');
-            return;
-        }
-
-        const data = response.body;
-
-        if (!data) {
-            setWaitingSystemResponse(false);
-            setHasError(true);
-            toast.error('Something went wrong');
-            return;
-        }
-
         setSystemResponse('');
-        setMessages((prev) => [...prev, new MyChatMessage({role: 'system', content: '...'})]);
-
-        const reader = data.getReader();
-        const decoder = new TextDecoder();
-
-        let done = false;
+        setMessages((prev) => [...prev, new MyChatMessage({role: 'assistant', content: '...'})]);
         let currentResponseMessage = '';
-
-        while (!done) {
-            if (stopSystemResponseRef.current) {
-                done = true;
-                break;
-            }
-
-            const {value, done: readerDone} = await reader.read();
-            done = readerDone;
-            const chunkValue = decoder.decode(value);
-
-            setSystemResponse((prev) => prev + chunkValue);
-            currentResponseMessage += chunkValue;
-        }
-
+        await getResp(serviceProvider, configPayload, messagesPayload, (chunk: string, finish: boolean) => {
+            setSystemResponse((prev) => prev + chunk);
+            currentResponseMessage += chunk;
+        }, () => {
+            setWaitingSystemResponse(false);
+            setHasError(true);
+            toast.error('Something went wrong');
+        });
+        let aiReplyMsg = new MyChatMessage({
+            role: 'assistant',
+            content: currentResponseMessage,
+            chatId: chat.id,
+        });
         setMessages((prev) => [
             ...prev.slice(0, -1),
-            new MyChatMessage({
-                role: 'assistant',
-                content: currentResponseMessage,
-            }),
+            aiReplyMsg,
         ]);
 
         setWaitingSystemResponse(false);
@@ -353,112 +314,27 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         if (!isNoContextConversation) {
             if (chatTitle == 'Chat') {
                 let currentChatTitle = '';
-                const chatTitlePayload: AppMessageProps[] = [{
+                const chatTitlePayload = [new MyChatMessage({
                     role: 'system',
                     content: `Please suggest a title for "${message.content}".`
-                }];
-
-                const response = await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        stream: enableStreamMessages,
-                        serviceProvider: serviceProvider,
-                        config: configPayload,
-                        messages: chatTitlePayload,
-                    }),
-                });
-
-                if (!response.ok) {
-                    return;
-                }
-
-                const data = response.body;
-
-                if (!data) {
-                    return;
-                }
-
+                })];
                 setChatTitleResponse('');
-
-                const reader = data.getReader();
-                const decoder = new TextDecoder();
-
-                let done = false;
-
-                while (!done) {
-                    const {value, done: readerDone} = await reader.read();
-                    done = readerDone;
-                    const chunkValue = decoder.decode(value);
-
-                    setChatTitleResponse((prev) => prev + chunkValue);
-                    currentChatTitle += chunkValue;
-                }
+                await getResp(serviceProvider, configPayload, chatTitlePayload, (chunk: string, finish: boolean) => {
+                    setChatTitleResponse((prev) => prev + chunk);
+                    currentChatTitle += chunk;
+                }, () => {
+                });
 
                 setChatTitle(currentChatTitle);
 
-                setLocalStorage(`histories-chat-${conversationID}`, {
-                    id: conversationID,
-                    type: 'chat',
-                    title: currentChatTitle,
-                    messages: [
-                        ...messages,
-                        message,
-                        {
-                            role: 'assistant',
-                            content: currentResponseMessage,
-                        },
-                    ],
-                    timestamp: new Date().getTime(),
-                });
+
             } else {
-                setLocalStorage(`histories-chat-${conversationID}`, {
-                    id: conversationID,
-                    type: 'chat',
-                    title: chatTitle,
-                    messages: [
-                        ...messages,
-                        message,
-                        {
-                            role: 'assistant',
-                            content: currentResponseMessage,
-                        },
-                    ],
-                    timestamp: new Date().getTime(),
-                });
             }
-
-            if (enableSync) {
-                const response = await fetch('/api/user/record', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: conversationID,
-                        type: 'chat',
-                        title: chatTitle,
-                        messages: [
-                            ...messages,
-                            message,
-                            {
-                                role: 'assistant',
-                                content: currentResponseMessage,
-                            },
-                        ],
-                        timestamp: new Date().getTime(),
-                    }),
-                });
-
-                if (!response.ok) {
-                    return;
-                }
-            }
-
-            const updateEvent = new CustomEvent('localStorageUpdated');
-            window.dispatchEvent(updateEvent);
+            await ChatDbUtil.getInstance().updateEntity(chat);
+            await router.push(`/mode/chat?share=${chat.id}`);
+            await MessageDbUtil.getInstance().updateEntity(message);
+            await MessageDbUtil.getInstance().updateEntity(aiReplyMsg);
+            await chatMutate(await ChatDbUtil.getInstance().loadEntities());
         }
     };
 

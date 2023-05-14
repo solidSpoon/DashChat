@@ -7,7 +7,7 @@ import moment from "moment";
 import {ChatConverter, MessageConverter} from "@/utils/db/Converter";
 import {listEntities, updateOrCreateEntities} from "@/app/api/sync/chat/route";
 
-let table = database.chat;
+let table = database.message;
 
 /**
  * 用于同步数据, 从服务器下载数据到客户端
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         date = moment(after).toDate();
     }
     console.log(date);
-    const messages = await listEntities(database, 'chat', user, date) as Message[];
+    const messages = await listEntities(database, 'message', user, date) as Message[];
     return NextResponse.json({
         success: 'true',
         prompts: messages.map(p => MessageConverter.instance.toDTO(p)),
@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({success: 'true'});
     }
 
-    await updateOrCreateEntities(database, 'chat', user, entitiesToUpdate);
+    await updateOrCreateEntities(database, 'message', user, entitiesToUpdate);
     return NextResponse.json({success: 'true'});
 }
 

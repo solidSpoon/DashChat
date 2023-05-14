@@ -8,6 +8,7 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
     public readonly LOCAL_KEY = 'chat-local';
     public readonly REMOTE_KEY = 'chat-remote';
     protected table: Dexie.Table<MyChat, IndexableType> = chatDb.chats;
+    protected name: string = 'chat';
     emptyEntity(): MyChat {
         return new MyChat();
     }
@@ -35,12 +36,15 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
             console.log("no chats to update");
             return;
         }
+        console.log("updateCloudChats", ps);
+        let value = ps.map(p => this.toDTO(p));
+        console.log("updateCloudChats", value);
         const response = await fetch(this.APT_PATH, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(ps.map(p => this.toDTO(p)))
+            body: JSON.stringify(value)
         });
 
         if (response.ok) {

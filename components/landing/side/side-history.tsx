@@ -54,12 +54,9 @@ const SideHistory = () => {
         // }
     };
 
-    const onHistoryDelete = (id: string, type: string) => {
-        localStorage.removeItem(`histories-${type}-${id}`);
-        toast.success('History deleted');
-
-        const updateEvent = new CustomEvent('localStorageUpdated');
-        window.dispatchEvent(updateEvent);
+    const onHistoryDelete =async (e: MyChat) => {
+        await chatDbUtil.deleteEntity(e);
+        await mutate(await chatDbUtil.loadLocalEntities());
     };
 
     const onShareClick = async (type: string, id: string) => {
@@ -143,7 +140,7 @@ const SideHistory = () => {
                                     <TiBrush className='text-lg hover:fill-green-500'/>
                                 </button>
                                 <button className='block'
-                                        onClick={() => onHistoryDelete(pinHistory.id, pinHistory.type)}>
+                                        onClick={() => onHistoryDelete(pinHistory)}>
                                     <TiDeleteOutline className='text-lg hover:fill-red-500'/>
                                 </button>
                             </div>
@@ -179,7 +176,7 @@ const SideHistory = () => {
                                 <button className='block' onClick={() => onTitleChange(history.id, history.type)}>
                                     <TiBrush className='text-lg hover:fill-green-500'/>
                                 </button>
-                                <button className='block' onClick={() => onHistoryDelete(history.id, history.type)}>
+                                <button className='block' onClick={() => onHistoryDelete(history)}>
                                     <TiDeleteOutline className='text-lg hover:fill-red-500'/>
                                 </button>
                             </div>

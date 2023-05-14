@@ -15,7 +15,7 @@ export abstract class BaseConverter<T extends BaseEntity> {
 
     public toDTO = (e: T): any => {
         return {
-            ...prompt,
+            ...e,
             clientCreatedAt: moment(e.clientCreatedAt).toISOString(),
             clientUpdatedAt: moment(e.clientUpdatedAt).toISOString(),
             serverCreatedAt: moment(e.serverCreatedAt).toISOString(),
