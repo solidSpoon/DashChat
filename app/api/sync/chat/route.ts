@@ -96,7 +96,7 @@ interface IEntity {
     serverCreatedAt: Date;
 }
 
-async function listEntities(prisma: PrismaClient, tableName: string, user: { id: string }, date: Date) {
+export async function listEntities(prisma: PrismaClient, tableName: string, user: { id: string }, date: Date) {
     // @ts-ignore
     const table: any = prisma[tableName];
 
@@ -110,7 +110,7 @@ async function listEntities(prisma: PrismaClient, tableName: string, user: { id:
     });
 }
 
-async function updateOrCreateEntities(
+export async function updateOrCreateEntities(
     prisma: PrismaClient,
     tableName: string,
     user: { id: string },

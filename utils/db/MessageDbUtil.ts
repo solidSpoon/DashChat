@@ -4,9 +4,9 @@ import {chatDb} from "@/utils/db/db";
 import Dexie, {IndexableType} from "dexie";
 
 export class ChatDbUtil extends BaseDbUtil<MyChat> {
-    protected readonly APT_PATH = '/api/sync/chat';
-    public readonly LOCAL_KEY = 'chat-local';
-    public readonly REMOTE_KEY = 'chat-remote';
+    protected readonly APT_PATH = '/api/sync/message';
+    public readonly LOCAL_KEY = 'chat-message-local';
+    public readonly REMOTE_KEY = 'chat-message-remote';
     protected table: Dexie.Table<MyChat, IndexableType> = chatDb.chats;
     emptyEntity(): MyChat {
         return new MyChat();

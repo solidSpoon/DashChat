@@ -1,6 +1,6 @@
 import {BaseEntity} from "@/types/entity";
 import moment from "moment/moment";
-import {Chat, Prompt} from "@prisma/client";
+import {Chat, Message, Prompt} from "@prisma/client";
 
 export abstract class BaseConverter<T extends BaseEntity> {
     public fromDTO = (json: any): T => {
@@ -30,4 +30,8 @@ export class PromptConverter extends BaseConverter<Prompt> {
 
 export class ChatConverter extends BaseConverter<Chat> {
     public static readonly instance = new ChatConverter();
+}
+
+export class MessageConverter extends BaseConverter<Message> {
+    public static readonly instance = new MessageConverter();
 }

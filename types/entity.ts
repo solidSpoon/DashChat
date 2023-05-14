@@ -1,4 +1,5 @@
-import { v4 as uuid } from 'uuid/v4';
+import {v4 as uuid} from 'uuid';
+
 export abstract class BaseEntity {
     id: string;
     clientCreatedAt: Date;
@@ -32,13 +33,32 @@ export class MyPrompt extends BaseEntity {
     }
 }
 
+export type ChatType = 'chat';
+
 export class MyChat extends BaseEntity {
     topic: string;
     pinned: boolean;
+    type: ChatType;
 
     constructor(data?: Partial<MyChat>) {
         super(data);
         this.topic = data?.topic || '';
+        this.pinned = data?.pinned || false;
+        this.type = data?.type || 'chat';
+    }
+}
+
+export class MyChatMessage extends BaseEntity {
+    chatId: string;
+    content: string;
+    role: string;
+    pinned: boolean;
+
+    constructor(data?: Partial<MyChatMessage>) {
+        super(data);
+        this.chatId = data?.chatId || '';
+        this.content = data?.content || '';
+        this.role = data?.role || '';
         this.pinned = data?.pinned || false;
     }
 }

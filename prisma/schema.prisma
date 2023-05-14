@@ -88,6 +88,7 @@ model Prompt {
 model Chat {
   id              String   @id @default(cuid())
   topic           String
+  type            String
   pinned          Boolean  @default(false)
   clientCreatedAt DateTime @map(name: "client_created_at")
   clientUpdatedAt DateTime @map(name: "client_updated_at")

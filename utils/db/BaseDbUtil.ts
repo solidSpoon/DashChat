@@ -21,8 +21,8 @@ export interface SyncOperation<T extends BaseEntity> {
 export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> implements SyncOperation<T> {
     private readonly enableCloudSync = true;
 
-    protected abstract readonly REMOTE_KEY: string;
-    protected abstract readonly LOCAL_KEY: string;
+    public abstract readonly REMOTE_KEY: string;
+    public abstract readonly LOCAL_KEY: string;
     protected abstract readonly APT_PATH: string;
     protected abstract table: Dexie.Table<T, IndexableType>;
 
