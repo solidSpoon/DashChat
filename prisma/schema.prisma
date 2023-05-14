@@ -36,6 +36,8 @@ model User {
   Share    Share[]
   teams    TeamMember[]
   prompts  Prompt[]
+  Chats    Chat[]
+  Messages Message[]
 
   @@map(name: "users")
 }
@@ -79,6 +81,45 @@ model Prompt {
   author User @relation(fields: [authorId], references: [id])
 
   @@map(name: "prompts")
+}
+
+// 对话列表
+// 对话列表
+model Chat {
+  id              String   @id @default(cuid())
+  topic           String
+  pinned          Boolean  @default(false)
+  clientCreatedAt DateTime @map(name: "client_created_at")
+  clientUpdatedAt DateTime @map(name: "client_updated_at")
+  serverCreatedAt DateTime @default(now()) @map(name: "server_created_at")
+  serverUpdatedAt DateTime @default(now()) @map(name: "server_updated_at")
+  authorId        String
+  deleted         Boolean  @default(false)
+
+  author   User      @relation(fields: [authorId], references: [id])
+  messages Message[]
+
+  @@map(name: "chats")
+}
+
+//  对话中的消息
+model Message {
+  id              String   @id @default(cuid())
+  chatId          String
+  content         String
+  role            String
+  pinned          Boolean  @default(false)
+  clientCreatedAt DateTime @map(name: "client_created_at")
+  clientUpdatedAt DateTime @map(name: "client_updated_at")
+  serverCreatedAt DateTime @default(now()) @map(name: "server_created_at")
+  serverUpdatedAt DateTime @default(now()) @map(name: "server_updated_at")
+  authorId        String
+  deleted         Boolean  @default(false)
+
+  chat   Chat @relation(fields: [chatId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map(name: "messages")
 }
 
 model Share {
