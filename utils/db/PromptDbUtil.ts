@@ -11,10 +11,10 @@ export default class PromptDbUtil {
     public static readonly REMOTE_KEY = 'chat-prompts-remote';
     public static readonly LOCAL_KEY = 'chat-prompts-local';
     private static readonly APT_PATH = '/api/nuser/prompt';
-
+    private static readonly table = chatDb.prompts;
 
     public static loadLocalPrompts = async (): Promise<Prompt[]> => {
-        return chatDb.prompts.filter(p => !p.deleted).toArray();
+        return this.table.filter(p => !p.deleted).toArray();
     }
 
 
@@ -22,7 +22,7 @@ export default class PromptDbUtil {
         if (this.enableCloudSync) {
             await this.syncPrompts();
         }
-        return chatDb.prompts.filter(p => !p.deleted).toArray();
+        return this.table.filter(p => !p.deleted).toArray();
     }
 
     private static async syncPrompts() {
@@ -32,7 +32,7 @@ export default class PromptDbUtil {
         console.log("unSyncedPrompts", unSyncedPrompts);
         await this.updateCloudPrompts(unSyncedPrompts);
         console.log("updateCloudPrompts done");
-        const cloudPrompts = await this.loadCloudPrompts(maxServerUpdatedAt);
+        const cloudPrompts = await this.loadCloudChats(maxServerUpdatedAt);
         console.log("cloudPrompts", cloudPrompts);
         await PromptDbUtil.updateLocalPrompts(cloudPrompts);
         console.log("sync prompts done");
@@ -106,7 +106,7 @@ export default class PromptDbUtil {
         chatDb.prompts.put(p);
     }
 
-    private static async loadCloudPrompts(date: Date): Promise<Prompt[]> {
+    private static async loadCloudChats(date: Date): Promise<Prompt[]> {
         console.log("loadCloudPrompts", date);
         const response = await fetch(this.APT_PATH + '?after=' + date.toISOString(), {
             method: 'GET',

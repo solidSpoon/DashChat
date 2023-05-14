@@ -1,13 +1,60 @@
+import {BaseDbUtil, SyncOperation} from "@/utils/db/BaseDbUtil";
+import {MyChat} from "@/types/entity";
 import {chatDb} from "@/utils/db/db";
-import {v4 as uuid} from "uuid";
-import moment from "moment";
+import Dexie, {IndexableType} from "dexie";
 
-export class ChatDbUtil {
+export class ChatDbUtil extends BaseDbUtil<MyChat> {
+    protected readonly APT_PATH = '/api/sync/chat';
+    protected readonly LOCAL_KEY = 'chat-local';
+    protected readonly REMOTE_KEY = 'chat-remote';
+    protected table: Dexie.Table<MyChat, IndexableType> = chatDb.chats;
+    emptyEntity(): MyChat {
+        return new MyChat();
+    }
 
-        public static enableCloudSync = true;
+    protected async loadCloudEntities(date: Date): Promise<MyChat[]> {
+        console.log("loadCloudChats", date);
+        const response = await fetch(this.APT_PATH + '?after=' + date.toISOString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
 
-        public static readonly REMOTE_KEY = 'chat-conversations-remote';
-        public static readonly LOCAL_KEY = 'chat-conversations-local';
-        private static readonly APT_PATH = '/api/nuser/chat';
+        if (!response.ok) {
+            throw new Error("cannot fetch cloud prompts");
+        }
+        const data = await response.json();
 
+        return data?.prompts?.map((p: any) => this.fromDTO(p));
+    }
+
+
+    protected async updateCloudEntities(ps: MyChat[]): Promise<void> {
+        if (!ps || ps.length === 0) {
+            console.log("no chats to update");
+            return;
+        }
+        const response = await fetch(this.APT_PATH, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(ps.map(p => this.toDTO(p)))
+        });
+
+        if (response.ok) {
+            return;
+        }
+
+        throw new Error("cannot update cloud chat");
+    }
+
+    private static instance: SyncOperation<MyChat>;
+    public static getInstance(): SyncOperation<MyChat> {
+        if (!ChatDbUtil.instance) {
+            ChatDbUtil.instance = new ChatDbUtil();
+        }
+        return ChatDbUtil.instance;
+    }
 }
