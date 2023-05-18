@@ -3,7 +3,7 @@ import {MyChat, MyChatMessage} from "@/types/entity";
 import {chatDb} from "@/utils/db/db";
 import Dexie, {IndexableType} from "dexie";
 import {Message} from "@prisma/client";
-
+import {MyUtil} from "@/utils/app/MyUtil";
 
 
 export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
@@ -15,6 +15,16 @@ export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
 
     emptyEntity(): MyChatMessage {
         return new MyChatMessage();
+    }
+
+    public async loadChatMessages(chatId: string): Promise<MyChatMessage[]> {
+        let myChatMessages = (await this.loadEntities()).filter(p => p.chatId === chatId);
+        console.log("loadChatMessages", myChatMessages);
+        return myChatMessages;
+    }
+
+    public async loadLocalChatMessages(chatId: string): Promise<MyChatMessage[]> {
+        return (await this.loadLocalEntities()).filter(p => p.chatId === chatId);
     }
 
     protected async loadCloudEntities(date: Date): Promise<MyChatMessage[]> {

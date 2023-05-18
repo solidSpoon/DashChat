@@ -41,17 +41,11 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
     public async updateEntity(e: T): Promise<void> {
         e = {...e, clientUpdatedAt: new Date()};
         await this.table.put(e);
-        if (this.enableCloudSync) {
-            await this.syncEntities();
-        }
     }
 
     public async deleteEntity(e: T): Promise<void> {
         e = {...e, deleted: true, clientUpdatedAt: new Date()};
         await this.table.put(e);
-        if (this.enableCloudSync) {
-            await this.syncEntities();
-        }
     }
 
 

@@ -432,7 +432,7 @@ const FileMain = () => {
                             <MainContent
                                 systemResponse={systemResponse}
                                 waitingSystemResponse={waitingSystemResponse}
-                                conversations={clearedConversation}
+                                messages={messages}
                                 reGenerate={(index: number) => {
                                     handleMessageSend(conversations[index + 3], index + 3);
                                 }}

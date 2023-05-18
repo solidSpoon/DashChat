@@ -85,8 +85,11 @@ export async function PUT(request: NextRequest) {
     if (entitiesToUpdate.length === 0) {
         return NextResponse.json({success: 'true'});
     }
-
-    await updateOrCreateEntities(database, 'chat', user, entitiesToUpdate);
+    try {
+        await updateOrCreateEntities(database, 'chat', user, entitiesToUpdate);
+    } catch (e) {
+        console.log(e);
+    }
     return NextResponse.json({success: 'true'});
 }
 
@@ -120,40 +123,42 @@ export async function updateOrCreateEntities(
 ) {
     // @ts-ignore
     const table: any = prisma[tableName];
-
     const entityIdsToUpdate = entitiesToUpdate.map(entity => entity.id);
 
-    const existingEntities = await table.findMany({
-        where: {id: {in: entityIdsToUpdate}},
+    await prisma.$transaction(async (tx) => {
+        const existingEntities = await tx[tableName].findMany({
+            where: {id: {in: entityIdsToUpdate}},
+        });
+        for (const entityToUpdate of entitiesToUpdate) {
+            // @ts-ignore
+            const existingEntity = existingEntities.find(entity => entity.id === entityToUpdate.id);
+
+            if (existingEntity && new Date(existingEntity.clientUpdatedAt) < entityToUpdate.clientUpdatedAt) {
+                await tx[tableName].update({
+                    where: {id: entityToUpdate.id},
+                    data: {
+                        ...entityToUpdate,
+                        authorId: user.id,
+                        clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
+                        clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
+                        serverCreatedAt: entityToUpdate.serverCreatedAt.toISOString(),
+                        serverUpdatedAt: moment().toISOString(),
+                    },
+                });
+            } else if (!existingEntity) {
+                await tx[tableName].create({
+                    data: {
+                        ...entityToUpdate,
+                        authorId: user.id,
+                        clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
+                        clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
+                        serverCreatedAt: moment().toISOString(),
+                        serverUpdatedAt: moment().toISOString(),
+                    },
+                });
+            }
+        }
     });
 
-    for (const entityToUpdate of entitiesToUpdate) {
-        // @ts-ignore
-        const existingEntity = existingEntities.find(entity => entity.id === entityToUpdate.id);
 
-        if (existingEntity && new Date(existingEntity.clientUpdatedAt) < entityToUpdate.clientUpdatedAt) {
-            await table.update({
-                where: {id: entityToUpdate.id},
-                data: {
-                    ...entityToUpdate,
-                    authorId: user.id,
-                    clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
-                    clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
-                    serverCreatedAt: entityToUpdate.serverCreatedAt.toISOString(),
-                    serverUpdatedAt: moment().toISOString(),
-                },
-            });
-        } else if (!existingEntity) {
-            await table.create({
-                data: {
-                    ...entityToUpdate,
-                    authorId: user.id,
-                    clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
-                    clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
-                    serverCreatedAt: moment().toISOString(),
-                    serverUpdatedAt: moment().toISOString(),
-                },
-            });
-        }
-    }
 }

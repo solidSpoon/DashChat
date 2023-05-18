@@ -1,4 +1,4 @@
-import {MyChatMessage} from "@/types/entity";
+import {MyChatMessage, toOpenAIMessage} from "@/types/entity";
 
 
 export async function getResp(
@@ -17,7 +17,7 @@ export async function getResp(
             stream: true,
             serviceProvider: serviceProvider,
             config: configPayload,
-            messages: messagesPayload.map((m) => m.toOpenAIMessage()),
+            messages: messagesPayload.map((m) => toOpenAIMessage(m)),
         }),
     });
     if (!response.ok) {

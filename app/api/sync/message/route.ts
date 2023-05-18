@@ -85,7 +85,11 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({success: 'true'});
     }
 
-    await updateOrCreateEntities(database, 'message', user, entitiesToUpdate);
+    try {
+        await updateOrCreateEntities(database, 'message', user, entitiesToUpdate);
+    } catch (error) {
+        console.error(error);
+    }
     return NextResponse.json({success: 'true'});
 }
 

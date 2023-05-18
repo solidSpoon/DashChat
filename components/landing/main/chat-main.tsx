@@ -10,9 +10,6 @@ import {toast} from 'react-hot-toast';
 
 import store from '@/hooks/store';
 import {useAtom, useAtomValue} from 'jotai';
-
-import {setLocalStorage} from '@/hooks/setLocalStorage';
-
 import ContentHead from '@/components/landing/main/chat-head';
 import InputArea from '@/components/landing/main/input-area';
 import MainContent from '@/components/landing/main/chat-content';
@@ -22,8 +19,6 @@ import ModeSettings from '@/components/landing/main/main-settings';
 import generateHash from '@/utils/app/generateHash';
 
 import {getSearchFromGoogleProgrammableSearchEngine} from '@/utils/plugins/search';
-import {fetchContent} from '@/utils/plugins/fetch_content';
-
 import {User} from '@prisma/client';
 import {TbLayoutSidebarRightExpand} from "react-icons/all";
 import ChatNote from "@/components/landing/main/chat-note";
@@ -32,7 +27,6 @@ import {getResp} from "@/utils/app/QaUtil";
 import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
 import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
 import useSWR from "swr";
-import {router} from "next/client";
 
 interface UserSettingsProps {
     user: User;
@@ -116,24 +110,41 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     const t = useTranslations('landing.main');
 
     // Conversation Config
-    const isNoContextConversation = useAtomValue(store.noContextConversationAtom);
-    const enableStreamMessages = useAtomValue(store.enableStreamMessagesAtom);
+    // const isNoContextConversation = useAtomValue(store.noContextConversationAtom);
     const enablePlugin = useAtomValue(store.enablePluginsAtom);
 
     const [systemPromptContent, setSystemPromptContent] = useAtom(store.systemPromptContentAtom);
     const isSystemPromptEmpty = !systemPromptContent.trim() && /^\s*$/.test(systemPromptContent);
-
-    const [systemResponse, setSystemResponse] = useState<string>('');
     const [waitingSystemResponse, setWaitingSystemResponse] = useState<boolean>(false);
     const stopSystemResponseRef = useRef<boolean>(false);
+    const [streamMessage, setStreamMessage] = useState<MyChatMessage | null>(null);
+    const {
+        data: localMessages,
+        mutate: localMessageMutate
+    } = useSWR(MessageDbUtil.getInstance().LOCAL_KEY + share, () => MessageDbUtil.getInstance().loadLocalChatMessages(share ?? ''));
+    const {
+        data: fullMessages,
+        mutate: fullMessageMutate
+    } = useSWR(MessageDbUtil.getInstance().REMOTE_KEY + share, () => MessageDbUtil.getInstance().loadChatMessages(share ?? ''), {});
 
-    const [hasError, setHasError] = useState<boolean>(false);
+    // 根据 id 合并本地和远程的消息
+    const messagesFunc = () => {
+        let result: MyChatMessage[] = [];
+        result.push(...(localMessages ?? []));
+        fullMessages?.forEach((message) => {
+            if (!result.find((m) => m.id === message.id)) {
+                result.push(message);
+            }
+        });
+        result.sort((a, b) => a.clientCreatedAt.getTime() - b.clientCreatedAt.getTime());
+        return result;
+    }
+    const messages = messagesFunc();
 
-    const [messages, setMessages] = useState<MyChatMessage[]>([]);
+
     const [conversationID, setConversationID] = useState<string>(generateHash(16));
 
-    const [chatTitle, setChatTitle] = useState<string>('Chat');
-    const [chatTitleResponse, setChatTitleResponse] = useState<string>('');
+    const [chat, setChat] = useState<MyChat>(new MyChat({topic: 'Chat'}));
 
     // Service Provider
     const serviceProvider = useAtomValue(store.serviceProviderAtom);
@@ -200,14 +211,48 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         }
     }, [userSettings]);
 
-    const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
-        let chat = chats?.find((c) => c.id === share) ?? new MyChat();
-        console.log('share', share, chat);
-        chat = {
-            ...chat,
-            type: 'chat',
-            topic: 'balalalal',
+
+    useEffect(() => {
+        const mutateMessages = async () => {
+            await localMessageMutate();
+            await fullMessageMutate();
         }
+        mutateMessages();
+
+        const mutateChat = async () => {
+            let chats = await ChatDbUtil.getInstance().loadEntities();
+            console.log('chatId', share, chats);
+            let c = chats.find((chat) => chat.id === share);
+            if (!c) {
+                c = new MyChat({type: "blank"});
+            }
+            setChat(c);
+        }
+        mutateChat();
+    }, [share]);
+
+    async function nameChat(message: MyChatMessage, configPayload: any) {
+        const chatTitlePayload = [new MyChatMessage({
+            role: 'user',
+            content: `Please suggest a title for "${message.content}".`
+        })];
+        let currentChatTitle = '';
+        await getResp(serviceProvider, configPayload, chatTitlePayload, (chunk: string, finish: boolean) => {
+            currentChatTitle += chunk;
+        }, () => {
+        });
+        console.log('currentChatTitle', currentChatTitle);
+        return currentChatTitle;
+    }
+
+    const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
+        if (chat.type === 'blank') {
+            await ChatDbUtil.getInstance().updateEntity(chat);
+            await router.push(`/mode/chat?share=${chat.id}`);
+        }
+
+        let currentMessages = [...messages];
+
         message.chatId = chat.id;
         setWaitingSystemResponse(true);
         const sysMsg = new MyChatMessage({
@@ -215,14 +260,22 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             content: systemPromptContent,
             chatId: chat.id,
         })
-        if (!isNoContextConversation) {
 
-            isSystemPromptEmpty || messages.find((c) => c.role === 'system')
-                ? setMessages((prev) => [...prev, message])
-                : setMessages((prev) => [sysMsg, ...prev, message]);
+        message = new MyChatMessage({
+            ...message,
+            clientCreatedAt: new Date(),
+            clientUpdatedAt: new Date(),
+        });
+
+        await MessageDbUtil.getInstance().updateEntity(message);
+        if (isSystemPromptEmpty || messages.find((c) => c.role === 'system')) {
+
         } else {
-            isSystemPromptEmpty || messages.find((c) => c.role === 'system') ? setMessages([message]) : setMessages([sysMsg, message]);
+            await MessageDbUtil.getInstance().updateEntity(sysMsg);
         }
+        await localMessageMutate();
+
+
         let configPayload = getConfigPlayload(serviceProvider, openAIConfig, azureConfig, teamConfig, huggingFaceConfig, cohereConfig, claudeConfig);
 
         let pluginResponse = null;
@@ -264,78 +317,57 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 content: pluginPrompt,
                 chatId: chat.id,
             });
-            if (!isNoContextConversation) {
-                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
-                    ? (messagesPayload = [...messages, sysMsg, message])
-                    : (messagesPayload = [sysMsg, ...messages, pluginMessage, message]);
-            } else {
-                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
-                    ? (messagesPayload = [sysMsg, message])
-                    : (messagesPayload = [sysMsg, pluginMessage, message]);
-            }
+            isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                ? (messagesPayload = [...messages, sysMsg, message])
+                : (messagesPayload = [sysMsg, ...messages, pluginMessage, message]);
+
         } else {
-            if (!isNoContextConversation) {
-                isSystemPromptEmpty || messages.find((c) => c.role === 'system')
-                    ? (messagesPayload = [...messages, message])
-                    : (messagesPayload = [sysMsg, ...messages, message]);
-            } else {
-                isSystemPromptEmpty || messages.find((c) => c.role === 'system') ? (messagesPayload = [message]) : (messagesPayload = [sysMsg, message]);
-            }
+            isSystemPromptEmpty || messages.find((c) => c.role === 'system')
+                ? (messagesPayload = [...messages, message])
+                : (messagesPayload = [sysMsg, ...messages, message]);
         }
 
         if (indexNumber && indexNumber >= 0) {
-            setMessages((prev) => prev.slice(0, indexNumber));
+            // 编辑回话
+            // setMessages((prev) => prev.slice(0, indexNumber));
             messagesPayload = messagesPayload.slice(0, indexNumber);
         }
 
-        setSystemResponse('');
-        setMessages((prev) => [...prev, new MyChatMessage({role: 'assistant', content: '...'})]);
-        let currentResponseMessage = '';
-        await getResp(serviceProvider, configPayload, messagesPayload, (chunk: string, finish: boolean) => {
-            setSystemResponse((prev) => prev + chunk);
-            currentResponseMessage += chunk;
-        }, () => {
-            setWaitingSystemResponse(false);
-            setHasError(true);
-            toast.error('Something went wrong');
-        });
         let aiReplyMsg = new MyChatMessage({
             role: 'assistant',
-            content: currentResponseMessage,
+            content: '',
             chatId: chat.id,
         });
-        setMessages((prev) => [
-            ...prev.slice(0, -1),
-            aiReplyMsg,
-        ]);
+        setStreamMessage(aiReplyMsg);
+        // setMessages((prev) => [...prev, aiReplyMsg]);
+        await getResp(serviceProvider, configPayload, messagesPayload, (chunk: string, finish: boolean) => {
 
+            aiReplyMsg = {
+                ...aiReplyMsg,
+                content: aiReplyMsg.content + chunk
+            };
+            setStreamMessage(aiReplyMsg);
+        }, () => {
+            setWaitingSystemResponse(false);
+            toast.error('Something went wrong');
+        });
         setWaitingSystemResponse(false);
 
-        if (!isNoContextConversation) {
-            if (chatTitle == 'Chat') {
-                let currentChatTitle = '';
-                const chatTitlePayload = [new MyChatMessage({
-                    role: 'system',
-                    content: `Please suggest a title for "${message.content}".`
-                })];
-                setChatTitleResponse('');
-                await getResp(serviceProvider, configPayload, chatTitlePayload, (chunk: string, finish: boolean) => {
-                    setChatTitleResponse((prev) => prev + chunk);
-                    currentChatTitle += chunk;
-                }, () => {
-                });
-
-                setChatTitle(currentChatTitle);
-
-
-            } else {
-            }
-            await ChatDbUtil.getInstance().updateEntity(chat);
-            await router.push(`/mode/chat?share=${chat.id}`);
-            await MessageDbUtil.getInstance().updateEntity(message);
-            await MessageDbUtil.getInstance().updateEntity(aiReplyMsg);
-            await chatMutate(await ChatDbUtil.getInstance().loadEntities());
+        await MessageDbUtil.getInstance().updateEntity(aiReplyMsg);
+        if (chat.type === 'blank') {
+            const title = await nameChat(message, configPayload);
+            let newChat: MyChat = {
+                ...chat,
+                topic: title,
+                type: 'chat',
+            };
+            setChat(newChat);
+            await ChatDbUtil.getInstance().updateEntity(newChat);
+            await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
         }
+        setStreamMessage(null);
+        await localMessageMutate();
+        await fullMessageMutate();
     };
 
     const handleTogglePromptSide = () => {
@@ -364,14 +396,14 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 className=' flex h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
                 <div className='flex h-full w-full flex-col gap-1 justify-between items-end'>
                     {messages.length > 0 &&
-                        <ContentHead chatTitle={chatTitle} chatTitleResponse={chatTitleResponse}
+                        <ContentHead chat={chat}
                                      waitingSystemResponse={waitingSystemResponse} conversations={messages}/>}
                     <div className='mx-auto flex-1 w-full overflow-auto'>
                         {messages.length > 0 ? (
                             <MainContent
-                                systemResponse={systemResponse}
                                 waitingSystemResponse={waitingSystemResponse}
-                                conversations={messages}
+                                messages={messages}
+                                streamMessage={streamMessage}
                                 reGenerate={(index: number) => (isSystemPromptEmpty ? handleMessageSend(messages[index - 1], index, null) : handleMessageSend(messages[index], index + 1, null))}
                                 onEdit={(index: number) => {
                                     const promptIndex = isSystemPromptEmpty ? index : index + 1;
@@ -384,7 +416,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                                             content: newContent,
                                         });
 
-                                        setMessages(messages.slice(0, promptIndex));
+                                        // setMessages(messages.slice(0, promptIndex));
 
                                         handleMessageSend(newMessage);
                                     }

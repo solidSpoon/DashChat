@@ -9,16 +9,14 @@ import BarLoader from 'react-spinners/BarLoader';
 import {BiCoin, BiMoney} from 'react-icons/bi';
 
 import calculateModelPrice from '@/utils/provider/openai/calculateModelPrice';
-import {MyChatMessage} from "@/types/entity";
+import {MyChat, MyChatMessage} from "@/types/entity";
 
 const ContentHead = ({
-                         chatTitle,
-                         chatTitleResponse,
+                         chat,
                          waitingSystemResponse,
                          conversations,
                      }: {
-    chatTitle: string;
-    chatTitleResponse: string;
+    chat: MyChat;
     waitingSystemResponse: boolean;
     conversations: MyChatMessage[];
 }) => {
@@ -56,7 +54,7 @@ const ContentHead = ({
     return (
         <div className='flex w-full items-center justify-start bg-transparent'>
             <div className='space-y-1'>
-                <p className=''>{chatTitle ?? chatTitleResponse}</p>
+                <p className=''>{chat.topic}</p>
                 <div className="flex justify-start gap-6">
                     <div className='flex items-center justify-start space-x-2 text-center text-sm'>
                         <BiCoin/>
