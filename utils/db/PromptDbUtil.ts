@@ -9,7 +9,7 @@ export default class PromptDbUtil extends BaseDbUtil<Prompt> {
     protected readonly name: string = 'prompt';
     public readonly REMOTE_KEY = 'chat-prompts-remote';
     public readonly LOCAL_KEY = 'chat-prompts-local';
-    protected readonly APT_PATH = '/api/nuser/prompt';
+    protected readonly APT_PATH = '/api/sync/prompt';
     protected readonly table = chatDb.prompts;
 
     public emptyEntity = (): Prompt => {

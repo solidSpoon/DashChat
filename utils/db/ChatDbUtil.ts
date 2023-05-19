@@ -13,6 +13,17 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
         return new MyChat();
     }
 
+    public async deleteChat(chatId: string): Promise<void> {
+        const response = await fetch(this.APT_PATH + '?chatId=' + chatId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!response.ok) {
+            throw new Error("cannot delete chat");
+        }
+    }
     protected async loadCloudEntities(date: Date): Promise<MyChat[]> {
         console.log("loadCloudChats", date);
         const response = await fetch(this.APT_PATH + '?after=' + date.toISOString(), {

@@ -55,8 +55,9 @@ const SideHistory = () => {
     };
 
     const onHistoryDelete =async (e: MyChat) => {
-        await chatDbUtil.deleteEntity(e);
-        await mutate(await chatDbUtil.loadLocalEntities());
+        await chatDbUtil.deleteChat(e.id);
+        await mutate();
+        await router.push('/mode/chat');
     };
 
     const onShareClick = async (type: string, id: string) => {

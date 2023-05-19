@@ -74,7 +74,7 @@ const LandingSide = ({className, user}: { className?: string; user: User | null 
                 <div className='flex items-center justify-center'>
                     <button
                         className='inline-flex items-center space-x-1 rounded p-1 px-2 text-sm font-medium transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
-                        onClick={() => (location.href = '/mode/chat')}
+                        onClick={() => (router.push('/mode/chat'))}
                     >
                         <HiChatBubbleLeft/>
                         <span>{t('New Conversation')}</span>

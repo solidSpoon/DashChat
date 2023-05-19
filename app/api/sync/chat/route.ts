@@ -1,12 +1,10 @@
-import {getServerSession} from "next-auth";
-import {authOptions} from "@/lib/auth";
 import {NextRequest, NextResponse} from "next/server";
-import {database} from "@/lib/database";
-import {Chat, PrismaClient, Prompt} from "@prisma/client";
+import {Chat} from "@prisma/client";
 import moment from "moment";
 import {ChatConverter} from "@/utils/db/Converter";
-
-let table = database.chat;
+import {listEntities, updateOrCreateEntities} from "@/lib/sync/PrismaDb";
+import {checkUserAndSync} from "@/lib/auth/session";
+import {database} from "@/lib/database";
 
 /**
  * 用于同步数据, 从服务器下载数据到客户端
@@ -14,25 +12,9 @@ let table = database.chat;
  * @constructor
  */
 export async function GET(request: NextRequest) {
-    const session = await getServerSession(authOptions);
-
-    const user = session?.user;
-
-    if (!user) {
-        return NextResponse.json({authenticated: false, session}, {status: 401});
-    }
-
-    const checkIfEnableSync = await database.user.findUnique({
-        where: {
-            id: user.id,
-        },
-        select: {
-            allowRecordCloudSync: true,
-        },
-    });
-
-    if (!checkIfEnableSync) {
-        return NextResponse.json({authenticated: false, session}, {status: 401});
+    const {status, message, success} = await checkUserAndSync();
+    if (!success) {
+        return NextResponse.json({authenticated: false, message}, {status});
     }
     let searchParams = request.nextUrl.searchParams;
     let after = searchParams.get('after');
@@ -41,7 +23,7 @@ export async function GET(request: NextRequest) {
         date = moment(after).toDate();
     }
     console.log(date);
-    const chats = await listEntities(database, 'chat', user, date) as Chat[];
+    const chats = await listEntities('chat', date) as Chat[];
     return NextResponse.json({
         success: 'true',
         prompts: chats.map(p => ChatConverter.instance.toDTO(p)),
@@ -56,25 +38,9 @@ export async function GET(request: NextRequest) {
  * @constructor
  */
 export async function PUT(request: NextRequest) {
-    const session = await getServerSession(authOptions);
-
-    const user = session?.user;
-
-    if (!user) {
-        return NextResponse.json({authenticated: false, session}, {status: 401});
-    }
-
-    const checkIfEnableSync = await database.user.findUnique({
-        where: {
-            id: user.id,
-        },
-        select: {
-            allowRecordCloudSync: true,
-        },
-    });
-
-    if (!checkIfEnableSync) {
-        return NextResponse.json({authenticated: false, session}, {status: 401});
+    const {status, message, success} = await checkUserAndSync();
+    if (!success) {
+        return NextResponse.json({authenticated: false, message}, {status});
     }
 
     // 解析请求体中的 prompts
@@ -86,79 +52,50 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({success: 'true'});
     }
     try {
-        await updateOrCreateEntities(database, 'chat', user, entitiesToUpdate);
+        await updateOrCreateEntities('chat', entitiesToUpdate);
     } catch (e) {
         console.log(e);
     }
     return NextResponse.json({success: 'true'});
 }
 
+/**
+ * 删除 Chat 时，需要删除其下的 Message
+ * @param request 传入 chatId
+ */
+export async function DELETE(request: NextRequest) {
+    const {status, message, success} = await checkUserAndSync();
+    if (!success) {
+        return NextResponse.json({authenticated: false, message}, {status});
+    }
+    let searchParams = request.nextUrl.searchParams;
+    let chatId = searchParams.get('chatId');
+    if (!chatId) {
+        return NextResponse.json({success: 'false', message: 'no chatId'});
+    }
 
-interface IEntity {
-    id: string;
-    clientCreatedAt: Date;
-    clientUpdatedAt: Date;
-    serverCreatedAt: Date;
-}
-
-export async function listEntities(prisma: PrismaClient, tableName: string, user: { id: string }, date: Date) {
-    // @ts-ignore
-    const table: any = prisma[tableName];
-
-    return await table.findMany({
-        where: {
-            authorId: user.id,
-            serverUpdatedAt: {
-                gt: date,
+    // 同一事务同时删除 Chat 和 Message (delete = 1)
+    await database.$transaction([
+        database.chat.updateMany({
+            where: {
+                id: chatId,
+            },
+            data: {
+                deleted: true,
+                clientUpdatedAt: new Date().toISOString(),
+                serverUpdatedAt: new Date().toISOString(),
             }
-        }
-    });
-}
-
-export async function updateOrCreateEntities(
-    prisma: PrismaClient,
-    tableName: string,
-    user: { id: string },
-    entitiesToUpdate: IEntity[]
-) {
-    // @ts-ignore
-    const table: any = prisma[tableName];
-    const entityIdsToUpdate = entitiesToUpdate.map(entity => entity.id);
-
-    await prisma.$transaction(async (tx) => {
-        const existingEntities = await tx[tableName].findMany({
-            where: {id: {in: entityIdsToUpdate}},
-        });
-        for (const entityToUpdate of entitiesToUpdate) {
-            // @ts-ignore
-            const existingEntity = existingEntities.find(entity => entity.id === entityToUpdate.id);
-
-            if (existingEntity && new Date(existingEntity.clientUpdatedAt) < entityToUpdate.clientUpdatedAt) {
-                await tx[tableName].update({
-                    where: {id: entityToUpdate.id},
-                    data: {
-                        ...entityToUpdate,
-                        authorId: user.id,
-                        clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
-                        clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
-                        serverCreatedAt: entityToUpdate.serverCreatedAt.toISOString(),
-                        serverUpdatedAt: moment().toISOString(),
-                    },
-                });
-            } else if (!existingEntity) {
-                await tx[tableName].create({
-                    data: {
-                        ...entityToUpdate,
-                        authorId: user.id,
-                        clientCreatedAt: entityToUpdate.clientCreatedAt.toISOString(),
-                        clientUpdatedAt: entityToUpdate.clientUpdatedAt.toISOString(),
-                        serverCreatedAt: moment().toISOString(),
-                        serverUpdatedAt: moment().toISOString(),
-                    },
-                });
+        }),
+        database.message.updateMany({
+            where: {
+                chatId: chatId,
+            },
+            data: {
+                deleted: true,
+                clientUpdatedAt: new Date().toISOString(),
+                serverUpdatedAt: new Date().toISOString(),
             }
-        }
-    });
-
-
+        })
+    ]);
+    return NextResponse.json({success: 'true'});
 }

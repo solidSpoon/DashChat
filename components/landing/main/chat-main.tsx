@@ -249,6 +249,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         if (chat.type === 'blank') {
             await ChatDbUtil.getInstance().updateEntity(chat);
             await router.push(`/mode/chat?share=${chat.id}`);
+            await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
         }
 
         let currentMessages = [...messages];
@@ -274,6 +275,10 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             await MessageDbUtil.getInstance().updateEntity(sysMsg);
         }
         await localMessageMutate();
+
+        if (chat.type === 'blank') {
+            await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
+        }
 
 
         let configPayload = getConfigPlayload(serviceProvider, openAIConfig, azureConfig, teamConfig, huggingFaceConfig, cohereConfig, claudeConfig);
@@ -338,7 +343,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             content: '',
             chatId: chat.id,
         });
-        setStreamMessage(aiReplyMsg);
+        // setStreamMessage(aiReplyMsg);
         // setMessages((prev) => [...prev, aiReplyMsg]);
         await getResp(serviceProvider, configPayload, messagesPayload, (chunk: string, finish: boolean) => {
 
@@ -365,8 +370,8 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             await ChatDbUtil.getInstance().updateEntity(newChat);
             await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
         }
-        setStreamMessage(null);
         await localMessageMutate();
+        setStreamMessage(null);
         await fullMessageMutate();
     };
 

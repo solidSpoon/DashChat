@@ -1,9 +1,9 @@
 import {NextRequest, NextResponse} from "next/server";
-import {Message} from "@prisma/client";
+import {Prompt} from "@prisma/client";
 import moment from "moment";
-import {ChatConverter, MessageConverter} from "@/utils/db/Converter";
-import {listEntities, updateOrCreateEntities} from "@/lib/sync/PrismaDb";
+import {PromptConverter} from "@/utils/db/Converter";
 import {checkUserAndSync} from "@/lib/auth/session";
+import {listEntities, updateOrCreateEntities} from "@/lib/sync/PrismaDb";
 
 /**
  * 用于同步数据, 从服务器下载数据到客户端
@@ -15,17 +15,20 @@ export async function GET(request: NextRequest) {
     if (!success) {
         return NextResponse.json({authenticated: false, message}, {status});
     }
+
     let searchParams = request.nextUrl.searchParams;
     let after = searchParams.get('after');
     let date = new Date();
     if (after) {
         date = moment(after).toDate();
     }
+
     console.log(date);
-    const messages = await listEntities('message', date) as Message[];
+    const prompts = await listEntities('prompt', date) as Prompt[];
+
     return NextResponse.json({
         success: 'true',
-        prompts: messages.map(p => MessageConverter.instance.toDTO(p)),
+        prompts: prompts.map(p => PromptConverter.instance.toDTO(p)),
     });
 }
 
@@ -43,11 +46,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // 解析请求体中的 prompts
-    const entitiesToUpdate: Message[] = (await request.json()).map((p: any) => ChatConverter.instance.fromDTO(p));
+    const promptsToUpdate: Prompt[] = (await request.json()).map((p: any) => PromptConverter.instance.fromDTO(p));
 
-    if (entitiesToUpdate.length === 0) {
+    if (promptsToUpdate.length === 0) {
         return NextResponse.json({success: 'true'});
     }
-    await updateOrCreateEntities('message', entitiesToUpdate);
+
+    await updateOrCreateEntities('prompt', promptsToUpdate);
     return NextResponse.json({success: 'true'});
 }
