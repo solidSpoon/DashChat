@@ -14,7 +14,8 @@ export interface MessagesResult<T> {
 export interface MessagesProps<T extends BaseEntity> {
     loadLocalEntities: () => Promise<T[]>;
     loadFullEntities: () => Promise<T[]>;
-    key: string;
+    localKey: string,
+    remoteKey: string,
     updateLocalEntity: (entity: T) => Promise<void>;
     enableCloudSync: boolean;
     deleteLocalEntity: (entity: T) => Promise<void>;
@@ -23,28 +24,29 @@ export interface MessagesProps<T extends BaseEntity> {
 const useBase = <T extends BaseEntity>({
                                            loadFullEntities,
                                            loadLocalEntities,
-                                           key,
+                                           localKey,
+                                           remoteKey,
                                            updateLocalEntity,
                                            enableCloudSync,
                                            deleteLocalEntity,
                                        }: MessagesProps<T>): MessagesResult<T> => {
-    const [entities, setEntities] = useState<T[]>([]);
     const {
         data: fullEntities,
         mutate: fullMessageMutate
-    } = useSWR(key, loadFullEntities, {});
+    } = useSWR(remoteKey, loadFullEntities, {});
+    const {
+        data: localEntities,
+        mutate: localMessageMutate
+    } = useSWR(localKey, loadLocalEntities, {});
 
-    const finalEntities = MessageDbUtil.computeFinalEntities(entities, fullEntities ?? []);
+    const finalEntities = MessageDbUtil.computeFinalEntities(localEntities ?? [], fullEntities ?? []);
     useEffect(() => {
-        const loadMessages = async () => {
-            setEntities(await loadLocalEntities() ?? []);
-        };
-        loadMessages();
+        localMessageMutate();
         fullMessageMutate([]);
-    }, []);
+    }, [localKey, remoteKey]);
     const updateEntity = async (message: T) => {
         await updateLocalEntity(message);
-        setEntities(await loadLocalEntities());
+        await localMessageMutate();
     }
 
     const syncMessages = async () => {
@@ -53,15 +55,16 @@ const useBase = <T extends BaseEntity>({
         }
         await fullMessageMutate();
     }
+
     const deleteMessage = async (message: T) => {
         await deleteLocalEntity(message);
-        setEntities(await loadLocalEntities());
+        await localMessageMutate();
     }
     return {
         messages: finalEntities,
         updateEntity: updateEntity,
         syncEntities: syncMessages,
-        deleteEntity: deleteMessage
+        deleteEntity: deleteMessage,
     };
 }
 

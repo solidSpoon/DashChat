@@ -1,0 +1,45 @@
+import useSWR from "swr";
+import {MyChatMessage, MyPrompt} from "@/types/entity";
+import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
+import {useEffect, useState} from "react";
+import useBase from "@/hooks/useBase";
+import PromptDbUtil from "@/utils/db/PromptDbUtil";
+
+export interface UsePromptResult {
+    prompts: MyPrompt[];
+    updatePrompt: (messages: MyPrompt) => Promise<void>;
+    syncPrompts: () => Promise<void>;
+    deletePrompt: (messages: MyPrompt) => Promise<void>;
+}
+
+const usePrompts = (enableCloudSync: boolean): UsePromptResult => {
+    const promptDb = new PromptDbUtil(enableCloudSync);
+    const loadLocalEntities = () => promptDb.loadLocalEntities();
+    const loadFullEntities = () => promptDb.loadEntities();
+    const updateLocalEntity = async (prompt: MyPrompt) => await promptDb.updateEntity(prompt);
+
+    const deleteLocalEntity = async (prompt: MyPrompt) => await promptDb.deleteEntity(prompt);
+
+    const {
+        messages,
+        deleteEntity,
+        updateEntity,
+        syncEntities
+    } = useBase<MyPrompt>({
+        loadLocalEntities: loadLocalEntities,
+        loadFullEntities: loadFullEntities,
+        localKey: promptDb.LOCAL_KEY,
+        remoteKey: promptDb.REMOTE_KEY,
+        updateLocalEntity: updateLocalEntity,
+        enableCloudSync: enableCloudSync,
+        deleteLocalEntity: deleteLocalEntity,
+    });
+    return {
+        prompts: messages,
+        updatePrompt: updateEntity,
+        syncPrompts: syncEntities,
+        deletePrompt: deleteEntity,
+    };
+}
+
+export default usePrompts;

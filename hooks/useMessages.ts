@@ -2,52 +2,56 @@ import useSWR from "swr";
 import {MyChatMessage} from "@/types/entity";
 import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
 import {useEffect, useState} from "react";
+import useBase from "@/hooks/useBase";
 
-export interface MessagesProps {
+export interface MessagesResult {
     messages: MyChatMessage[];
     updateMessage: (messages: MyChatMessage) => Promise<void>;
     syncMessages: () => Promise<void>;
     deleteMessage: (messages: MyChatMessage) => Promise<void>;
 }
 
-const useMessages = (chatId: string | undefined, enableCloudSync: boolean): MessagesProps => {
-    const messageDb = new MessageDbUtil(enableCloudSync);
-    const [messages, setMessages] = useState<MyChatMessage[]>([]);
-    const {
-        data: fullMessages,
-        mutate: fullMessageMutate
-    } = useSWR(messageDb.REMOTE_KEY + chatId, () => messageDb.loadChatMessages(chatId ?? ''), {});
+export interface LoadParam {
+    chatId: string;
+}
 
-    const finalMessages = MessageDbUtil.computeFinalEntities(messages, fullMessages ?? []);
-    useEffect(() => {
-        const loadMessages = async () => {
-            setMessages(await messageDb.loadLocalChatMessages(chatId ?? '') ?? []);
-        };
-        loadMessages();
-        fullMessageMutate([]);
-    }, [chatId]);
-    const updateMessage = async (message: MyChatMessage) => {
+const useMessages = (chatId: string | undefined, enableCloudSync: boolean): MessagesResult => {
+    const messageDb = new MessageDbUtil(enableCloudSync);
+    const loadLocalEntities = () => messageDb.loadLocalChatMessages(chatId??'');
+    const loadFullEntities = () => messageDb.loadChatMessages(chatId??'');
+    const updateLocalEntity = async (message: MyChatMessage) => {
         if (message.chatId.trim() === '') {
             throw new Error('chatId is empty');
         }
         await messageDb.updateEntity(message);
-        setMessages(await messageDb.loadLocalChatMessages(message.chatId) ?? []);
     }
-
-    const syncMessages = async () => {
-        if (!enableCloudSync) {
-            return;
-        }
-        await fullMessageMutate();
-    }
-    const deleteMessage = async (message: MyChatMessage) => {
+    const deleteLocalEntity = async (message: MyChatMessage) => {
         if (message.chatId.trim() === '') {
             throw new Error('chatId is empty');
         }
         await messageDb.deleteEntity(message);
-        setMessages(await messageDb.loadLocalChatMessages(message.chatId) ?? []);
     }
-    return {messages: finalMessages, updateMessage, syncMessages, deleteMessage};
+    const {
+        messages,
+        deleteEntity,
+        updateEntity,
+        syncEntities,
+    } = useBase<MyChatMessage>({
+        loadLocalEntities: loadLocalEntities,
+        loadFullEntities: loadFullEntities,
+        localKey: messageDb.LOCAL_KEY + chatId,
+        remoteKey: messageDb.REMOTE_KEY + chatId,
+        updateLocalEntity: updateLocalEntity,
+        enableCloudSync: enableCloudSync,
+        deleteLocalEntity: deleteLocalEntity,
+    });
+
+    return {
+        messages: messages,
+        updateMessage: updateEntity,
+        syncMessages: syncEntities,
+        deleteMessage: deleteEntity,
+    };
 }
 
 export default useMessages;

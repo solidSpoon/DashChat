@@ -193,7 +193,9 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         console.log('currentChatTitle', currentChatTitle);
         return currentChatTitle;
     }
-
+    const getMessageUpdater = ()=> {
+        return updateMessage;
+    }
     const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
         message.chatId = chat.id;
         if (chat.type === 'blank') {
@@ -304,8 +306,8 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             toast.error('Something went wrong');
         });
         setWaitingSystemResponse(false);
-
-        await updateMessage(aiReplyMsg);
+        let messageUpdater = getMessageUpdater();
+        await messageUpdater(aiReplyMsg);
         setStreamMessage(null);
         if (chat.type === 'blank') {
             const title = await nameChat(message, configPayload);
