@@ -21,6 +21,7 @@ export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
     }
 
     public async loadChatMessages(chatId: string): Promise<MyChatMessage[]> {
+        MyUtil.sleep(5000);
         let myChatMessages = (await this.loadEntities()).filter(p => p.chatId === chatId);
         console.log("loadChatMessages", myChatMessages);
         return myChatMessages;

@@ -38,6 +38,7 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
         super();
         this.enableCloudSync = enableCloudSync;
     }
+
     public loadLocalEntities = async (): Promise<T[]> => {
         return this.table.filter(p => !p.deleted).toArray();
     }
@@ -99,16 +100,55 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
         for (const cloudEntity of cloudEntities) {
             // 获取本地数据库中的相同ID的提示
             const localEntity = await this.table.get(cloudEntity.id);
-            if (localEntity) {
-                // 如果本地提示的 clientUpdatedAt 小于云端提示的 clientUpdatedAt，
-                // 则使用云端的提示更新本地提示
-                if (localEntity.clientUpdatedAt <= cloudEntity.clientUpdatedAt) {
-                    await this.table.put(cloudEntity);
-                }
-            } else {
-                // 如果本地数据库中没有这个提示，直接添加
-                await this.table.add(cloudEntity);
-            }
+            const finalEntity = BaseDbUtil.computeFinalEntity<T>(localEntity, cloudEntity);
+            await this.table.put(finalEntity);
         }
+    }
+
+    /**
+     * 根据 clientUpdatedAt 计算出最终的 entities
+     * @param localEntities
+     * @param cloudEntities
+     */
+    public static computeFinalEntities<T extends BaseEntity>(localEntities: T[], cloudEntities: T[]): T[] {
+        const finalEntitiesMap = new Map<string, T>();
+        const localEntitiesMap = new Map<string, T>();
+        const cloudEntitiesMap = new Map<string, T>();
+        for (const localEntity of localEntities) {
+            localEntitiesMap.set(localEntity.id, localEntity);
+        }
+        for (const cloudEntity of cloudEntities) {
+            cloudEntitiesMap.set(cloudEntity.id, cloudEntity);
+        }
+        for (const localEntity of localEntities) {
+            const cloudEntity = cloudEntitiesMap.get(localEntity.id);
+            const finalEntity = BaseDbUtil.computeFinalEntity<T>(localEntity, cloudEntity);
+            finalEntitiesMap.set(finalEntity.id, finalEntity);
+        }
+        for (const cloudEntity of cloudEntities) {
+            const localEntity = localEntitiesMap.get(cloudEntity.id);
+            const finalEntity = BaseDbUtil.computeFinalEntity<T>(localEntity, cloudEntity);
+            finalEntitiesMap.set(finalEntity.id, finalEntity);
+        }
+        let finalEntities: T[] = Array.from(finalEntitiesMap.values());
+        finalEntities = finalEntities.filter(e => !e.deleted);
+        finalEntities.sort((a, b) => a.clientUpdatedAt.getTime() - b.clientUpdatedAt.getTime());
+        return finalEntities;
+    }
+
+    public static computeFinalEntity<T extends BaseEntity>(localEntity?: T | undefined, cloudEntity?: T): T {
+        if (!localEntity && !cloudEntity) {
+            throw new Error('localEntity and cloudEntity cannot be null');
+        }
+        if (!localEntity) {
+            return cloudEntity!;
+        }
+        if (!cloudEntity) {
+            return localEntity;
+        }
+        if (localEntity.clientCreatedAt.getTime() <= cloudEntity.clientCreatedAt.getTime()) {
+            return cloudEntity;
+        }
+        return localEntity;
     }
 }

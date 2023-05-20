@@ -15,9 +15,11 @@ import useSWR from "swr";
 import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
 import {Chat} from "@prisma/client";
 import {MyChat} from "@/types/entity";
+import useUserInfo from "@/hooks/useUserInfo";
 
 const SideHistory = () => {
-    const chatDb = new ChatDbUtil(true);
+    const {userInfo} = useUserInfo();
+    const chatDb = new ChatDbUtil(userInfo?.allowRecordCloudSync ?? false);
     const router = useRouter();
 
     const t = useTranslations('landing.side');
@@ -55,7 +57,7 @@ const SideHistory = () => {
     };
 
     const onHistoryDelete =async (e: MyChat) => {
-        await chatDb.deleteChat(e.id);
+        await chatDb.deleteEntity(e);
         await mutate();
         await router.push('/mode/chat');
     };

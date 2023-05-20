@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const user = session?.user;
 
         if (!user) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            return res.status(200).json({ user: undefined });
         }
 
         const userInfo = await database.user.findUnique({

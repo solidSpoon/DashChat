@@ -47,33 +47,23 @@ export async function PUT(request: NextRequest) {
     let json = await request.json();
     console.log(json);
     const entitiesToUpdate: Chat[] = json.map((p: any) => ChatConverter.instance.fromDTO(p));
-
+    const notDeletedChats: Chat[] = entitiesToUpdate.filter(p => !p.deleted);
+    const deletedChats: Chat[] = entitiesToUpdate.filter(p => p.deleted);
     if (entitiesToUpdate.length === 0) {
         return NextResponse.json({success: 'true'});
     }
-    try {
-        await updateOrCreateEntities('chat', entitiesToUpdate);
-    } catch (e) {
-        console.log(e);
-    }
+
+    let updatePromise = updateOrCreateEntities('chat', notDeletedChats);
+    let deletePromise = Promise.all(deletedChats.map(p => deleteChat(p.id)));
+    await Promise.all([updatePromise, deletePromise]);
     return NextResponse.json({success: 'true'});
 }
 
 /**
  * 删除 Chat 时，需要删除其下的 Message
- * @param request 传入 chatId
+ * @param chatId
  */
-export async function DELETE(request: NextRequest) {
-    const {status, message, success} = await checkUserAndSync();
-    if (!success) {
-        return NextResponse.json({authenticated: false, message}, {status});
-    }
-    let searchParams = request.nextUrl.searchParams;
-    let chatId = searchParams.get('chatId');
-    if (!chatId) {
-        return NextResponse.json({success: 'false', message: 'no chatId'});
-    }
-
+async function deleteChat(chatId: string): Promise<void> {
     // 同一事务同时删除 Chat 和 Message (delete = 1)
     await database.$transaction([
         database.chat.updateMany({

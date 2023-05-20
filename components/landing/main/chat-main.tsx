@@ -27,6 +27,8 @@ import {getResp} from "@/utils/app/QaUtil";
 import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
 import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
 import useSWR from "swr";
+import useUserInfo from "@/hooks/useUserInfo";
+import useMessages from "@/hooks/useMessages";
 
 interface UserSettingsProps {
     user: User;
@@ -102,13 +104,12 @@ function getConfigPlayload(serviceProvider: "Azure" | "Claude" | "Custom" | "Hug
 }
 
 const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
-    const messageDb = new MessageDbUtil(true);
+    // User Settings
+    const {userInfo} = useUserInfo();
     const chatDb = new ChatDbUtil(true);
-
-
     const searchParams = useSearchParams();
 
-    const share = searchParams?.get('share');
+    const chatId = searchParams?.get('share') ?? undefined;
     const router = useRouter();
 
     const t = useTranslations('landing.main');
@@ -122,29 +123,13 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     const [waitingSystemResponse, setWaitingSystemResponse] = useState<boolean>(false);
     const stopSystemResponseRef = useRef<boolean>(false);
     const [streamMessage, setStreamMessage] = useState<MyChatMessage | null>(null);
-    const {
-        data: localMessages,
-        mutate: localMessageMutate
-    } = useSWR(messageDb.LOCAL_KEY + share, () => messageDb.loadLocalChatMessages(share ?? ''));
-    const {
-        data: fullMessages,
-        mutate: fullMessageMutate
-    } = useSWR(messageDb.REMOTE_KEY + share, () => messageDb.loadChatMessages(share ?? ''), {});
 
-    // 根据 id 合并本地和远程的消息
-    const messagesFunc = () => {
-        let result: MyChatMessage[] = [];
-        result.push(...(localMessages ?? []));
-        fullMessages?.forEach((message) => {
-            if (!result.find((m) => m.id === message.id)) {
-                result.push(message);
-            }
-        });
-        result.sort((a, b) => a.clientCreatedAt.getTime() - b.clientCreatedAt.getTime());
-        return result;
-    }
-    const messages = messagesFunc();
-
+    const {
+        messages,
+        updateMessage,
+        deleteMessage,
+        syncMessages,
+    } = useMessages(chatId, userInfo?.allowRecordCloudSync ?? false);
 
     const [conversationID, setConversationID] = useState<string>(generateHash(16));
 
@@ -171,69 +156,29 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     // Claude
     const claudeConfig = useAtomValue(store.claudeConfigAtom);
 
-    // User Settings
-    const [userSettings, setUserSettings] = useState<UserSettingsProps | null>(null);
-
     const [isShowPromptCard, setIsShowPromptCard] = useAtom(store.isShowPromptCardAtom);
 
     const {
         data: chats,
         mutate: chatMutate
     } = useSWR(chatDb.REMOTE_KEY, chatDb.loadEntities);
-    const {data: allMessages} = useSWR(messageDb.REMOTE_KEY, messageDb.loadEntities);
     // Plugins
 
     // Search
     const searchPluginConfig = useAtomValue(store.searchConfigAtom);
 
     useEffect(() => {
-        if (!userSettings) {
-            const getUserInfo = async () => {
-                const response = await fetch('/api/user/info', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!response.ok) {
-                    return;
-                }
-
-                const data = await response.json();
-                console.log('dddd', data);
-
-                //{user: null}
-                if (!data.user) {
-                    return;
-                }
-
-                setUserSettings(data);
-            };
-
-            getUserInfo();
-        }
-    }, [userSettings]);
-
-
-    useEffect(() => {
-        const mutateMessages = async () => {
-            await localMessageMutate();
-            await fullMessageMutate();
-        }
-        mutateMessages();
-
         const mutateChat = async () => {
             let chats = await chatDb.loadEntities();
-            console.log('chatId', share, chats);
-            let c = chats.find((chat) => chat.id === share);
+            console.log('chatId', chatId, chats);
+            let c = chats.find((chat) => chat.id === chatId);
             if (!c) {
                 c = new MyChat({type: "blank"});
             }
             setChat(c);
         }
         mutateChat();
-    }, [share]);
+    }, [chatId]);
 
     async function nameChat(message: MyChatMessage, configPayload: any) {
         const chatTitlePayload = [new MyChatMessage({
@@ -253,9 +198,8 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         message.chatId = chat.id;
         if (chat.type === 'blank') {
             await chatDb.updateEntity(chat);
-            await messageDb.updateEntity(message);
+            await updateMessage(message);
             await router.push(`/mode/chat?share=${chat.id}`);
-            await localMessageMutate();
             await chatMutate(await chatDb.loadLocalEntities());
         }
 
@@ -272,13 +216,13 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             clientUpdatedAt: new Date(),
         });
 
-        await messageDb.updateEntity(message);
+        await updateMessage(message);
         if (isSystemPromptEmpty || messages.find((c) => c.role === 'system')) {
 
         } else {
-            await messageDb.updateEntity(sysMsg);
+            await updateMessage(sysMsg);
         }
-        await localMessageMutate();
+
         if (chat.type === 'blank') {
             await chatMutate(await chatDb.loadLocalEntities());
         }
@@ -361,7 +305,8 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         });
         setWaitingSystemResponse(false);
 
-        await messageDb.updateEntity(aiReplyMsg);
+        await updateMessage(aiReplyMsg);
+        setStreamMessage(null);
         if (chat.type === 'blank') {
             const title = await nameChat(message, configPayload);
             let newChat: MyChat = {
@@ -373,9 +318,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             await chatDb.updateEntity(newChat);
             await chatMutate(await chatDb.loadLocalEntities());
         }
-        await localMessageMutate();
-        setStreamMessage(null);
-        await fullMessageMutate();
+        await syncMessages();
     };
 
     const handleTogglePromptSide = () => {

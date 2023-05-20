@@ -14,6 +14,8 @@ import {uuid} from "uuidv4";
 import useSWR from "swr";
 import PromptDbUtil from "@/utils/db/PromptDbUtil";
 import {Prompt} from "@prisma/client";
+import useUserInfo from "@/hooks/useUserInfo";
+import {useSession} from "next-auth/react";
 
 interface PromptItemsProps {
     showPrompt: (prompt: Prompt | null) => void;
@@ -21,7 +23,8 @@ interface PromptItemsProps {
 }
 
 const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
-    const promptDb = new PromptDbUtil(true);
+    const {userInfo} = useUserInfo();
+    const promptDb = new PromptDbUtil(userInfo?.allowRecordCloudSync ?? false);
     const router = useRouter();
 
     const t = useTranslations('landing.chat');
