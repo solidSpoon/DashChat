@@ -83,7 +83,7 @@ export function PromptCard({prompt, onClose, onUpdate, onSend}: PromptCardProps)
 
     const changed = prompt.name !== tempPrompt.name || prompt.content !== tempPrompt.content;
     return (
-        <div className="h-full w-[350px] flex-none select-none flex flex-col gap-2">
+        <div className="h-full w-[350px] flex-none select-none flex flex-col gap-2 max-2xl:hidden">
             <div className="w-full flex flex-none bg-slate-100 p-1 rounded-xl">
                 <div
                     className={`flex w-0 flex-1 justify-center rounded-lg items-center cursor-pointer py-0.5 ${editing ? 'bg-white shadow' : 'text-gray-400'}`}

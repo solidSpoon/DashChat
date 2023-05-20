@@ -68,7 +68,7 @@ const PromptSide = ({isShowPromptSide, changeShowPromptSide}: PromptSideProps) =
         <>
             {prompt &&
                 <PromptCard prompt={prompt} onClose={() => handleShowPrompt(null)} onUpdate={handleUpdatePrompt} onSend={handleSendToChat}/>}
-            <aside className={'flex-none h-full flex-col gap-2 flex shadow rounded-lg bg-white/90 md:p-3 '}>
+            <aside className={'flex-none h-full flex-col gap-2 flex shadow rounded-lg bg-white/90 md:p-3 max-2xl:hidden'}>
                 <div className='flex items-start justify-between border-b'>
                     <div className='p-1 flex-1'>
                         <p className='from-green-400 to-blue-500 bg-gradient-to-r bg-clip-text text-lg font-semibold leading-none text-transparent md:text-xl'>Prompts</p>

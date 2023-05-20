@@ -382,10 +382,10 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
         <main
             className="flex w-full flex-row-reverse gap-2 rounded-lg bg-white/90 dark:bg-[#202327] shadow backdrop-blur md:p-3">
             {!isShowPromptCard &&
-                <div className="w-[350px] flex-none h-full flex flex-col items-end">
+                <div className="w-[350px] flex-none h-full flex flex-col items-end max-lg:hidden">
                     {!isShowPromptSide &&
                         <button
-                            className='inline-flex items-center space-x-1 rounded p-1 px-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
+                            className='max-2xl:hidden inline-flex items-center space-x-1 rounded p-1 px-1 transition duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-stone-600'
                             onClick={handleTogglePromptSide}
                             aria-label='Nav'
                         >
