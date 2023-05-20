@@ -65,5 +65,5 @@ export default class PromptDbUtil extends BaseDbUtil<Prompt> {
         return data?.prompts?.map((p: any) => this.fromDTO(p));
     }
 
-    public static readonly instance: PromptDbUtil = new PromptDbUtil();
+    // public static readonly instance: PromptDbUtil = new PromptDbUtil(true);
 }

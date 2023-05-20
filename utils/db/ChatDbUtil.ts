@@ -13,6 +13,10 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
         return new MyChat();
     }
 
+    constructor(enableCloudSync: boolean) {
+        super(enableCloudSync);
+    }
+
     public async deleteChat(chatId: string): Promise<void> {
         const response = await fetch(this.APT_PATH + '?chatId=' + chatId, {
             method: 'DELETE',
@@ -63,13 +67,5 @@ export class ChatDbUtil extends BaseDbUtil<MyChat> {
         }
 
         throw new Error("cannot update cloud chat");
-    }
-
-    private static instance: ChatDbUtil;
-    public static getInstance(): ChatDbUtil {
-        if (!ChatDbUtil.instance) {
-            ChatDbUtil.instance = new ChatDbUtil();
-        }
-        return ChatDbUtil.instance;
     }
 }

@@ -13,6 +13,9 @@ export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
     protected table: Dexie.Table<MyChatMessage, IndexableType> = chatDb.messages;
     protected name: string = 'chat-message';
 
+    constructor(enableCloudSync: boolean) {
+        super(enableCloudSync);
+    }
     emptyEntity(): MyChatMessage {
         return new MyChatMessage();
     }
@@ -63,14 +66,5 @@ export class MessageDbUtil extends BaseDbUtil<MyChatMessage> {
         }
 
         throw new Error("cannot update cloud chat");
-    }
-
-    private static instance: MessageDbUtil;
-
-    public static getInstance(): MessageDbUtil {
-        if (!MessageDbUtil.instance) {
-            MessageDbUtil.instance = new MessageDbUtil();
-        }
-        return MessageDbUtil.instance;
     }
 }

@@ -21,6 +21,7 @@ interface PromptItemsProps {
 }
 
 const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
+    const promptDb = new PromptDbUtil(true);
     const router = useRouter();
 
     const t = useTranslations('landing.chat');
@@ -29,8 +30,8 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
 
     // const {data, mutate} = useSWR(PromptDbUtil.REMOTE_KEY, PromptDbUtil.loadPrompts);
 
-    const {data: localPrompts} = useSWR(PromptDbUtil.instance.LOCAL_KEY, PromptDbUtil.instance.loadLocalEntities);
-    const {data: remotePrompts, mutate} = useSWR(PromptDbUtil.instance.REMOTE_KEY, PromptDbUtil.instance.loadEntities);
+    const {data: localPrompts} = useSWR(promptDb.LOCAL_KEY, promptDb.loadLocalEntities);
+    const {data: remotePrompts, mutate} = useSWR(promptDb.REMOTE_KEY, promptDb.loadEntities);
 
     const prompts = remotePrompts ?? localPrompts ?? [];
 
@@ -39,18 +40,18 @@ const PromptItems = ({showPrompt, selectedPrompt}: PromptItemsProps) => {
     const pinnedPrompts = prompts?.filter((p) => p.pinned) ?? [];
 
     const onPromptPin = async (p: Prompt) => {
-        await PromptDbUtil.instance.updateEntity({...p, pinned: true});
-        await mutate(await PromptDbUtil.instance.loadLocalEntities());
+        await promptDb.updateEntity({...p, pinned: true});
+        await mutate(await promptDb.loadLocalEntities());
     };
 
     const onPromptUnpin = async (p: Prompt) => {
-        await PromptDbUtil.instance.updateEntity({...p, pinned: false});
-        await mutate(await PromptDbUtil.instance.loadLocalEntities());
+        await promptDb.updateEntity({...p, pinned: false});
+        await mutate(await promptDb.loadLocalEntities());
     };
 
     const onPromptDelete = async (p: Prompt) => {
-        await PromptDbUtil.instance.deleteEntity(p);
-        await mutate(await PromptDbUtil.instance.loadLocalEntities());
+        await promptDb.deleteEntity(p);
+        await mutate(await promptDb.loadLocalEntities());
     };
 
     return (

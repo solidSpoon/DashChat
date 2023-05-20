@@ -17,27 +17,27 @@ import {Chat} from "@prisma/client";
 import {MyChat} from "@/types/entity";
 
 const SideHistory = () => {
+    const chatDb = new ChatDbUtil(true);
     const router = useRouter();
 
     const t = useTranslations('landing.side');
 
     const [userInput, setUserInput] = useState<string>('');
-    let chatDbUtil = ChatDbUtil.getInstance();
-    const {data: localData} = useSWR(chatDbUtil.LOCAL_KEY, chatDbUtil.loadLocalEntities);
-    const {data: remoteData, mutate} = useSWR(chatDbUtil.REMOTE_KEY, chatDbUtil.loadEntities);
+    const {data: localData} = useSWR(chatDb.LOCAL_KEY, chatDb.loadLocalEntities);
+    const {data: remoteData, mutate} = useSWR(chatDb.REMOTE_KEY, chatDb.loadEntities);
     const histories = remoteData ?? localData ?? [];
     const pinnedHistories = histories?.filter((history) => history.pinned) ?? [];
     const unpinnedHistories = histories?.filter((history) => !history.pinned) ?? [];
 
 
     const onHistoryPin = async (c: MyChat) => {
-        await chatDbUtil.updateEntity({...c, pinned: true});
-        await mutate(await chatDbUtil.loadLocalEntities());
+        await chatDb.updateEntity({...c, pinned: true});
+        await mutate(await chatDb.loadLocalEntities());
     };
 
     const onHistoryUnpin = async (c: MyChat) => {
-        await chatDbUtil.updateEntity({...c, pinned: false});
-        await mutate(await chatDbUtil.loadLocalEntities());
+        await chatDb.updateEntity({...c, pinned: false});
+        await mutate(await chatDb.loadLocalEntities());
     };
 
     const onTitleChange = (id: string, type: string) => {
@@ -55,7 +55,7 @@ const SideHistory = () => {
     };
 
     const onHistoryDelete =async (e: MyChat) => {
-        await chatDbUtil.deleteChat(e.id);
+        await chatDb.deleteChat(e.id);
         await mutate();
         await router.push('/mode/chat');
     };

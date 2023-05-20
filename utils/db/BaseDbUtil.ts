@@ -21,7 +21,7 @@ export interface SyncOperation<T extends BaseEntity> {
 export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> implements SyncOperation<T> {
     protected name: string = 'entity'
 
-    private readonly enableCloudSync = true;
+    private enableCloudSync = true;
 
     public abstract readonly REMOTE_KEY: string;
     public abstract readonly LOCAL_KEY: string;
@@ -34,6 +34,10 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
 
     public abstract emptyEntity(): T;
 
+    constructor(enableCloudSync: boolean) {
+        super();
+        this.enableCloudSync = enableCloudSync;
+    }
     public loadLocalEntities = async (): Promise<T[]> => {
         return this.table.filter(p => !p.deleted).toArray();
     }
@@ -71,7 +75,7 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
     }
 
     private loadLocalEntitiesAfter = async (after: Date): Promise<T[]> => {
-        return this.table.filter(p =>  p.clientUpdatedAt > after).toArray();
+        return this.table.filter(p => p.clientUpdatedAt > after).toArray();
     }
 
     /**
