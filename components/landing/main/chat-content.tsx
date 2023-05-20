@@ -144,7 +144,8 @@ const MainContent = ({
                     const isUser = message.role === 'user';
                     return chatBuble(isUser, index, message);
                 })}
-            {streamMessage && chatBuble(false, messages.length, streamMessage)}
+            {streamMessage && chatBuble(false, messages.length,
+                {...streamMessage, content: streamMessage.content + '▐'})}
             <div ref={endOfMessageRef}/>
         </div>
     );

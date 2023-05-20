@@ -8,7 +8,7 @@ interface siteConfig {
 }
 
 export const siteConfig: siteConfig = {
-    title: 'Chat Chat',
+    title: 'Dash Chat',
     description: 'Unlock next-level conversations with AI',
 };
 

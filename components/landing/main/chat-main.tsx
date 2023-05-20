@@ -246,15 +246,15 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     }
 
     const handleMessageSend = async (message: MyChatMessage, indexNumber?: number | null, plugin?: PluginProps | null) => {
+        message.chatId = chat.id;
         if (chat.type === 'blank') {
             await ChatDbUtil.getInstance().updateEntity(chat);
+            await MessageDbUtil.getInstance().updateEntity(message);
             await router.push(`/mode/chat?share=${chat.id}`);
+            await localMessageMutate();
             await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
         }
 
-        let currentMessages = [...messages];
-
-        message.chatId = chat.id;
         setWaitingSystemResponse(true);
         const sysMsg = new MyChatMessage({
             role: 'system',
@@ -275,7 +275,6 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
             await MessageDbUtil.getInstance().updateEntity(sysMsg);
         }
         await localMessageMutate();
-
         if (chat.type === 'blank') {
             await chatMutate(await ChatDbUtil.getInstance().loadLocalEntities());
         }
