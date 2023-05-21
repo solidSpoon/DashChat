@@ -8,13 +8,13 @@ import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
 export interface UseChatsResult {
     chats: MyChat[];
     updateChat: (messages: MyChat) => Promise<void>;
-    syncChats: () => Promise<void>;
-    deleteChats: (messages: MyChat) => Promise<void>;
+    deleteChat: (messages: MyChat) => Promise<void>;
 }
 
 const useChats = (enableCloudSync: boolean): UseChatsResult => {
     const chatDb = new ChatDbUtil(enableCloudSync);
-    const loadLocalEntities = () => chatDb.loadLocalEntities();
+    console.log('enableCloudSync', enableCloudSync);
+    const loadLocalEntities = () => chatDb.loadLocalEntitiesIncludeRecentDeleted();
     const loadFullEntities = () => chatDb.loadEntities();
     const updateLocalEntity = async (message: MyChat) => await chatDb.updateEntity(message);
     const deleteLocalEntity = async (message: MyChat) => await chatDb.deleteEntity(message);
@@ -33,11 +33,19 @@ const useChats = (enableCloudSync: boolean): UseChatsResult => {
         deleteLocalEntity: deleteLocalEntity,
     });
 
+    const updateChat = async (p: MyChat) => {
+        await updateEntity(p);
+        await syncEntities();
+    }
+    const deleteChat = async (p: MyChat) => {
+        await deleteEntity(p);
+        await syncEntities();
+    }
+
     return {
         chats: messages,
-        updateChat: updateEntity,
-        syncChats: syncEntities,
-        deleteChats: deleteEntity,
+        updateChat: updateChat,
+        deleteChat: deleteChat,
     };
 }
 

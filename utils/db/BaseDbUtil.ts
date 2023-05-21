@@ -21,7 +21,7 @@ export interface SyncOperation<T extends BaseEntity> {
 export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> implements SyncOperation<T> {
     protected name: string = 'entity'
 
-    private enableCloudSync = true;
+    private static enableCloudSync = true;
 
     public abstract readonly REMOTE_KEY: string;
     public abstract readonly LOCAL_KEY: string;
@@ -36,11 +36,19 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
 
     constructor(enableCloudSync: boolean) {
         super();
-        this.enableCloudSync = enableCloudSync;
+        BaseDbUtil.enableCloudSync = enableCloudSync;
     }
 
     public loadLocalEntities = async (): Promise<T[]> => {
         return this.table.filter(p => !p.deleted).toArray();
+    }
+    public loadLocalEntitiesIncludeRecentDeleted = async (): Promise<T[]> => {
+        const entities = await this.loadLocalEntities();
+        // 最近一天删除的
+        const recentDeletedEntities = await this.table
+            .filter(p => p.deleted &&
+                moment(p.clientUpdatedAt).isAfter(moment().subtract(1, 'days'))).toArray();
+        return [...entities, ...recentDeletedEntities];
     }
 
     public async updateEntity(e: T): Promise<void> {
@@ -55,7 +63,8 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
 
 
     public loadEntities = async (): Promise<T[]> => {
-        if (this.enableCloudSync) {
+        console.log('db enableCloudSync', BaseDbUtil.enableCloudSync);
+        if (BaseDbUtil.enableCloudSync) {
             await this.syncEntities();
         }
         return this.table.filter(p => !p.deleted).toArray();
@@ -111,6 +120,20 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
      * @param cloudEntities
      */
     public static computeFinalEntities<T extends BaseEntity>(localEntities: T[], cloudEntities: T[]): T[] {
+        console.log('computeFinalEntities localEntities', localEntities.map((e) => {
+            return {
+                id: e.id,
+                deleted: e.deleted,
+                clientUpdatedAt: moment(e.clientUpdatedAt).format('YYYY-MM-DD HH:mm:ss'),
+            };
+        }));
+        console.log('computeFinalEntities cloudEntities', cloudEntities.map((e) => {
+            return {
+                id: e.id,
+                deleted: e.deleted,
+                clientUpdatedAt: moment(e.clientUpdatedAt).format('YYYY-MM-DD HH:mm:ss'),
+            };
+        }));
         const finalEntitiesMap = new Map<string, T>();
         const localEntitiesMap = new Map<string, T>();
         const cloudEntitiesMap = new Map<string, T>();
@@ -133,6 +156,13 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
         let finalEntities: T[] = Array.from(finalEntitiesMap.values());
         finalEntities = finalEntities.filter(e => !e.deleted);
         finalEntities.sort((a, b) => a.clientUpdatedAt.getTime() - b.clientUpdatedAt.getTime());
+        console.log('computeFinalEntities finalEntities', finalEntities.map((e) => {
+            return {
+                id: e.id,
+                deleted: e.deleted,
+                clientUpdatedAt: moment(e.clientUpdatedAt).format('YYYY-MM-DD HH:mm:ss'),
+            };
+        }));
         return finalEntities;
     }
 
@@ -146,7 +176,7 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
         if (!cloudEntity) {
             return localEntity;
         }
-        if (localEntity.clientCreatedAt.getTime() <= cloudEntity.clientCreatedAt.getTime()) {
+        if (localEntity.clientUpdatedAt.getTime() <= cloudEntity.clientUpdatedAt.getTime()) {
             return cloudEntity;
         }
         return localEntity;

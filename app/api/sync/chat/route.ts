@@ -87,5 +87,4 @@ async function deleteChat(chatId: string): Promise<void> {
             }
         })
     ]);
-    return NextResponse.json({success: 'true'});
 }

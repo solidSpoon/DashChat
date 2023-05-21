@@ -11,35 +11,28 @@ import {toast} from 'react-hot-toast';
 import {TiPinOutline, TiDeleteOutline, TiBrush} from 'react-icons/ti';
 
 import {Input} from '@/components/ui/input';
-import useSWR from "swr";
-import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
-import {Chat} from "@prisma/client";
 import {MyChat} from "@/types/entity";
 import useUserInfo from "@/hooks/useUserInfo";
+import useChats from "@/hooks/useChats";
 
 const SideHistory = () => {
     const {userInfo} = useUserInfo();
-    const chatDb = new ChatDbUtil(userInfo?.allowRecordCloudSync ?? false);
     const router = useRouter();
 
     const t = useTranslations('landing.side');
 
     const [userInput, setUserInput] = useState<string>('');
-    const {data: localData} = useSWR(chatDb.LOCAL_KEY, chatDb.loadLocalEntities);
-    const {data: remoteData, mutate} = useSWR(chatDb.REMOTE_KEY, chatDb.loadEntities);
-    const histories = remoteData ?? localData ?? [];
-    const pinnedHistories = histories?.filter((history) => history.pinned) ?? [];
-    const unpinnedHistories = histories?.filter((history) => !history.pinned) ?? [];
+    const {chats, deleteChat, updateChat} = useChats(userInfo?.allowRecordCloudSync ?? false);
+    const pinnedHistories = chats?.filter((c) => c.pinned) ?? [];
+    const unpinnedHistories = chats?.filter((c) => !c.pinned) ?? [];
 
 
     const onHistoryPin = async (c: MyChat) => {
-        await chatDb.updateEntity({...c, pinned: true});
-        await mutate(await chatDb.loadLocalEntities());
+        await updateChat({...c, pinned: true});
     };
 
     const onHistoryUnpin = async (c: MyChat) => {
-        await chatDb.updateEntity({...c, pinned: false});
-        await mutate(await chatDb.loadLocalEntities());
+        await updateChat({...c, pinned: false});
     };
 
     const onTitleChange = (id: string, type: string) => {
@@ -56,9 +49,8 @@ const SideHistory = () => {
         // }
     };
 
-    const onHistoryDelete =async (e: MyChat) => {
-        await chatDb.deleteEntity(e);
-        await mutate();
+    const onHistoryDelete = async (e: MyChat) => {
+        await deleteChat(e);
         await router.push('/mode/chat');
     };
 

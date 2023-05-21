@@ -8,13 +8,12 @@ import PromptDbUtil from "@/utils/db/PromptDbUtil";
 export interface UsePromptResult {
     prompts: MyPrompt[];
     updatePrompt: (messages: MyPrompt) => Promise<void>;
-    syncPrompts: () => Promise<void>;
     deletePrompt: (messages: MyPrompt) => Promise<void>;
 }
 
 const usePrompts = (enableCloudSync: boolean): UsePromptResult => {
     const promptDb = new PromptDbUtil(enableCloudSync);
-    const loadLocalEntities = () => promptDb.loadLocalEntities();
+    const loadLocalEntities = () => promptDb.loadLocalEntitiesIncludeRecentDeleted();
     const loadFullEntities = () => promptDb.loadEntities();
     const updateLocalEntity = async (prompt: MyPrompt) => await promptDb.updateEntity(prompt);
 
@@ -34,11 +33,20 @@ const usePrompts = (enableCloudSync: boolean): UsePromptResult => {
         enableCloudSync: enableCloudSync,
         deleteLocalEntity: deleteLocalEntity,
     });
+
+    const updatePrompt = async (p: MyPrompt) => {
+        await updateEntity(p);
+        await syncEntities();
+    }
+    const deletePrompt = async (p: MyPrompt) => {
+        await deleteEntity(p);
+        await syncEntities();
+    }
+
     return {
         prompts: messages,
-        updatePrompt: updateEntity,
-        syncPrompts: syncEntities,
-        deletePrompt: deleteEntity,
+        updatePrompt: updatePrompt,
+        deletePrompt: deletePrompt,
     };
 }
 
