@@ -24,7 +24,6 @@ import {TbLayoutSidebarRightExpand} from "react-icons/all";
 import ChatNote from "@/components/landing/main/chat-note";
 import {MyChat, MyChatMessage} from "@/types/entity";
 import {getResp} from "@/utils/app/QaUtil";
-import {MessageDbUtil} from "@/utils/db/MessageDbUtil";
 import {ChatDbUtil} from "@/utils/db/ChatDbUtil";
 import useSWR from "swr";
 import useUserInfo from "@/hooks/useUserInfo";
@@ -346,7 +345,7 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
                 </div>
             }
             <div
-                className=' flex h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
+                className=' flex w-0 flex-1 h-full flex-grow flex-col px-4 py-2 transition-transform duration-500'>
                 <div className='flex h-full w-full flex-col gap-1 justify-between items-end'>
                     {messages.length > 0 &&
                         <ContentHead chat={chat}

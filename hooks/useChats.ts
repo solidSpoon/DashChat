@@ -15,7 +15,7 @@ const useChats = (enableCloudSync: boolean): UseChatsResult => {
     const chatDb = new ChatDbUtil(enableCloudSync);
     console.log('enableCloudSync', enableCloudSync);
     const loadLocalEntities = () => chatDb.loadLocalEntitiesIncludeRecentDeleted();
-    const loadFullEntities = () => chatDb.loadEntities();
+    const loadFullEntities = () => chatDb.loadEntitiesIncludeRecentDeleted();
     const updateLocalEntity = async (message: MyChat) => await chatDb.updateEntity(message);
     const deleteLocalEntity = async (message: MyChat) => await chatDb.deleteEntity(message);
     const {

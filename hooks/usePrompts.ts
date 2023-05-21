@@ -14,7 +14,7 @@ export interface UsePromptResult {
 const usePrompts = (enableCloudSync: boolean): UsePromptResult => {
     const promptDb = new PromptDbUtil(enableCloudSync);
     const loadLocalEntities = () => promptDb.loadLocalEntitiesIncludeRecentDeleted();
-    const loadFullEntities = () => promptDb.loadEntities();
+    const loadFullEntities = () => promptDb.loadEntitiesIncludeRecentDeleted();
     const updateLocalEntity = async (prompt: MyPrompt) => await promptDb.updateEntity(prompt);
 
     const deleteLocalEntity = async (prompt: MyPrompt) => await promptDb.deleteEntity(prompt);

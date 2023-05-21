@@ -69,6 +69,13 @@ export abstract class BaseDbUtil<T extends BaseEntity> extends BaseConverter<T> 
         }
         return this.table.filter(p => !p.deleted).toArray();
     }
+    public loadEntitiesIncludeRecentDeleted = async (): Promise<T[]> => {
+        console.log('db enableCloudSync', BaseDbUtil.enableCloudSync);
+        if (BaseDbUtil.enableCloudSync) {
+            await this.syncEntities();
+        }
+        return this.loadLocalEntitiesIncludeRecentDeleted();
+    }
 
     private async syncEntities() {
         console.log(`sync ${this.name}`);
