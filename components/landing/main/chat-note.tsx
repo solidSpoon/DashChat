@@ -1,12 +1,14 @@
-import {useEffect, useRef, useState} from "react";
-import {usePrevious} from "@radix-ui/react-use-previous";
+import {useEffect, useState} from "react";
 
 const ChatNote = () => {
     const noteKey = "chatNote";
-    const [note,setNote] = useState<string>(localStorage.getItem(noteKey) ?? "");
+    const [note,setNote] = useState<string>("");
     useEffect(() => {
         localStorage.setItem(noteKey, note);
     }, [note]);
+    useEffect(() =>{
+        setNote(localStorage.getItem(noteKey)??'');
+    },[])
 
     return (
         <textarea
