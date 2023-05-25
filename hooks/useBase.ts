@@ -34,20 +34,25 @@ const useBase = <T extends BaseEntity>({
         data: fullEntities,
         mutate: fullMessageMutate
     } = useSWR(remoteKey, loadFullEntities);
-    const {
-        data: localEntities,
-        mutate: localMessageMutate
-    } = useSWR(localKey, loadLocalEntities);
+    // const {const
+    //     data: localEntities,
+    //     mutate: localMessageMutate
+    // } = useSWR(localKey, loadLocalEntities);
+    const [localEntities, setLocalEntities] = useState<T[]>([]);
 
     const finalEntities = MessageDbUtil.computeFinalEntities(localEntities ?? [], fullEntities ?? []);
     console.log('base updateEntity finalEntities', finalEntities);
     useEffect(() => {
-        localMessageMutate();
+        const load = async () => {
+            const local = await loadLocalEntities();
+            setLocalEntities(local);
+        }
+        load();
         fullMessageMutate([]);
     }, [localKey, remoteKey]);
     const updateEntity = async (message: T) => {
         await updateLocalEntity(message);
-        await localMessageMutate();
+        setLocalEntities(await loadLocalEntities());
     }
 
     const syncMessages = async () => {
@@ -58,9 +63,8 @@ const useBase = <T extends BaseEntity>({
     }
 
     const deleteMessage = async (message: T) => {
-
         await deleteLocalEntity(message);
-        await localMessageMutate();
+        setLocalEntities(await loadLocalEntities());
     }
     return {
         messages: finalEntities,

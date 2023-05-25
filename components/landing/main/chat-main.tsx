@@ -122,17 +122,16 @@ const ChatMain = ({isShowPromptSide, changeShowPromptSide}: ChatMainProps) => {
     const [waitingSystemResponse, setWaitingSystemResponse] = useState<boolean>(false);
     const stopSystemResponseRef = useRef<boolean>(false);
     const [streamMessage, setStreamMessage] = useState<MyChatMessage | null>(null);
-
+    const [chat, setChat] = useState<MyChat>(new MyChat({topic: 'Chat'}));
     const {
         messages,
         updateMessage,
         deleteMessage,
         syncMessages,
-    } = useMessages(chatId, userInfo?.allowRecordCloudSync ?? false);
+    } = useMessages(chat.id, userInfo?.allowRecordCloudSync ?? false);
 
     const [conversationID, setConversationID] = useState<string>(generateHash(16));
 
-    const [chat, setChat] = useState<MyChat>(new MyChat({topic: 'Chat'}));
 
     // Service Provider
     const serviceProvider = useAtomValue(store.serviceProviderAtom);
