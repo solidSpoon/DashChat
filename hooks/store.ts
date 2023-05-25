@@ -5,7 +5,7 @@ import { atomWithStorage } from 'jotai/utils';
 
 // Layout
 const isHiddenSideAtom = atom(false);
-const isShowPromptSideAtom = atom(true);
+const isShowPromptSideAtom = atom(false);
 const isShowPromptCardAtom = atom(false);
 const chatMsgAtom = atom('');
 
